@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Node API 测试服务器 - AI 规则
 
 ## 🔄 规则自动收集机制（元规则）
