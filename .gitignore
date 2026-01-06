@@ -1,0 +1,42 @@
+# 依赖
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 编译输出
+dist/
+*.js
+*.js.map
+*.d.ts
+!public/**/*.js
+
+# AI 生成的接口模块
+src/generated/
+
+# 环境变量
+.env
+.env.local
+
+# 日志
+logs/
+*.log
+
+# 上传文件
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+

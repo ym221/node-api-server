@@ -1,0 +1,321 @@
+# Node API 测试服务器 - AI 规则
+
+## 🔄 规则自动收集机制（元规则）
+
+### 工作原理
+在与用户的对话过程中，AI 需要主动识别和收集新的规则：
+
+1. **识别规则时机**：
+   - 用户明确提到"规则"、"不要"、"必须"、"禁止"等关键词
+   - 用户纠正 AI 的行为
+   - 用户表达对某种做法的偏好
+   - 用户说"记住"、"以后"、"下次"等表示未来行为的词
+
+2. **判断是否收集**：
+   - ✅ 适用于整个项目的通用规则
+   - ✅ 会重复发生的行为规范
+   - ✅ AI 容易犯的错误或误解
+   - ❌ 一次性的具体任务指令
+   - ❌ 特定模块的业务逻辑（应记录在模块的 `.prompt.md` 中）
+
+3. **自动更新规则文件**：
+   - 识别到新规则后，询问用户："是否需要将此规则添加到全局规则中？"
+   - 或直接在完成任务后主动更新规则文件
+   - 规则应该清晰、简洁、可执行
+   - 使用清单格式（✅/❌）便于快速扫描
+
+4. **规则分类**：
+   - 文件生成规则
+   - 代码风格规则
+   - AI 行为规范
+   - 项目结构规则
+   - 与用户沟通规则
+
+### 示例
+用户说："不要生成无意义的文档"
+→ AI 识别：这是一个通用的文件生成规则
+→ AI 收集：添加到"文件生成规则"部分
+→ 格式化为：`❌ 禁止生成任何总结类文档`
+
+---
+
+## 基本规则
+- 使用中文
+- 接口生成到 `src/generated/[模块名]/`
+- 每个模块**必须包含** `.prompt.md` 文件
+
+## 接口生成流程
+
+1. 用户提供接口文档
+2. 复制 `src/template/` 到 `src/generated/[模块名]/`
+3. 修改所有文件以实现业务逻辑
+4. **创建 `.prompt.md`**：记录该模块的业务逻辑、接口说明、注意事项
+
+## 核心工具
+
+### BaseModel（数据模型基类）
+位置：`src/core/BaseModel.ts`
+
+常用方法：
+- `findAll(conditions)` - 查询所有
+- `findById(id)` - 根据ID查询
+- `findPaginated(page, pageSize, conditions, orderBy)` - 分页查询
+- `create(data)` - 创建记录
+- `update(id, data)` - 更新记录
+- `delete(id)` - 删除记录
+
+### Res（响应封装）
+位置：`src/core/Response.ts`
+
+响应格式：
+- **ERP 格式**：`Res.success(res, data, 'ERP')`
+- **B2B 格式**：`Res.success(res, data, 'B2B')`
+- **Ebooking 格式**：`Res.success(res, data, 'Ebooking')`
+
+### Faker（数据生成）
+位置：`src/utils/faker.ts`
+
+## 响应格式说明
+- ERP：`{ Success, Data, Message, Code }` (大写字段)
+- B2B/Ebooking：`{ success, data, message, code }` (小写字段)
+
+### 完整响应格式规范
+
+#### B2B 统一响应结构
+```json
+{
+  "success": true,          // 是否成功，true/false
+  "code": 0,                // 状态码，0表示成功，非0表示失败
+  "message": "",            // 响应消息
+  "data": {                 // 响应数据
+    "orderInfos": [],       // 订单/发票列表（列表接口返回）
+    "pagination": {         // 分页信息（仅列表接口返回）
+      "pageCount": 15,      // 总页数
+      "totalCount": 148     // 总记录数
+    }
+  }
+}
+```
+
+**重要说明：**
+- ✅ **B2B/Ebooking 格式中，`code` 为 0 表示成功，非 0 表示失败**
+- ✅ **ERP 格式中，`Code` 为 200 表示成功，非 200 表示失败**
+- ✅ **成功时：`success: true, code: 0`（B2B）或 `Success: true, Code: 200`（ERP）**
+- ✅ **失败时：`success: false, code: 非0值`（B2B）或 `Success: false, Code: 非200值`（ERP）**
+
+#### B2B 统一请求结构
+```json
+{
+  "items_per_page": 10,     // 每页条目数，有分页才有该入参
+  "page_number": 1,         // 当前页，有分页才有该入参
+  // ... 其他参数
+}
+```
+
+#### ERP 统一响应结构
+```json
+{
+  "Code": 200,              // 状态码，200表示成功
+  "Success": true,          // 是否成功，true/false
+  "Message": "success",     // 响应消息
+  "Data": {},               // 响应数据，具体结构见各接口说明
+  "pagination_info": {      // 分页信息（仅列表接口返回）
+    "page_number": 1,       // 当前页码
+    "items_per_page": 20,   // 每页数量
+    "total_items": 100,     // 总记录数
+    "total_pages": 5        // 总页数
+  }
+}
+```
+
+#### ERP 统一请求结构
+```json
+{
+  "PaginationInfo": {       // 这个参数只有获取列表且有分页时才传递
+    "items_per_page": 20,   // 每页条数
+    "page_number": 1,       // 当前页
+    "total_pages": 321,     // 总页数
+    "total_items": 6404     // 总条目数
+  },
+  // ... 其他查询参数
+}
+```
+
+### 格式选择规则
+- ✅ **若文档中明确指定响应格式，严格按照文档执行**
+- ✅ **若文档未指定，默认使用 B2B 格式**
+- ✅ 在 `moduleConfig` 中配置 `responseFormat`：`'B2B' | 'ERP' | 'Ebooking'`
+- ✅ Controller 中调用 `Res.success(res, data, moduleConfig.responseFormat)`
+- ✅ 分页接口使用 `Res.paginated(res, list, total, page, pageSize, moduleConfig.responseFormat)`
+
+## 文件生成规则（重要！）
+- ❌ **禁止生成任何总结类文档**（如 PROJECT_SUMMARY.md、GETTING_STARTED.md、CHANGELOG.md 等）
+- ❌ 不生成无意义文档（如 FIX_REPORT.md、TODO.md）
+- ❌ 项目总结、进度报告等信息在聊天中说明即可，不要生成文档文件
+- ✅ 只维护 `.prompt.md`（模块级提示词）
+- ❌ 不要在全局提示词中记录具体接口
+- ✅ 具体接口记录在模块的 `.prompt.md` 中
+- ✅ 只保留必要的技术文档：README.md（项目说明）
+
+## 临时文件管理规则（重要！）
+- ❌ **禁止保留调试/测试用的临时脚本文件**
+- ✅ **完成任务后必须清理所有临时生成的文件**
+- ✅ 临时文件包括但不限于：
+  - 数据库修复脚本（如 `fix-table.ts`、`recreate-table.ts`）
+  - 测试数据插入脚本（如 `insert-data.ts`）
+  - 调试用脚本
+  - 实验性代码文件
+- ✅ 永久性的初始化脚本应该放在 `scripts/` 目录
+- ✅ 模块的初始化脚本应命名为 `init-db.ts`，用于首次创建表和初始数据
+- ✅ 完成调试后，删除源文件（.ts）和编译后的文件（.js）
+
+## 使用说明页面维护规则（重要！）
+- ✅ **当项目使用方式有任何变更时，必须同步更新使用说明页面**
+- ✅ 使用说明页面位置：`public/admin/pages/help.js`
+- ✅ 需要更新的情况包括：
+  - 新增功能或页面
+  - 修改现有功能的使用方式
+  - 删除功能
+  - 修改配置方式
+  - 修改项目启动流程
+  - 修改模块开发流程
+  - 新增或修改 API 路由规则
+- ✅ 更新时机：在完成功能变更后，立即更新使用说明页面
+- ✅ 更新原则：保持说明清晰、准确、完整
+
+## UI/UX 设计规则（重要！）
+- ✅ **所有样式必须采用最优方案**
+- ✅ **界面必须美观、现代化**
+- ✅ **风格必须保持一致**
+- ✅ 遵循现代 UI 设计原则：
+  - 合理的间距和留白
+  - 统一的颜色系统
+  - 清晰的视觉层级
+  - 流畅的交互反馈
+  - 响应式布局
+- ✅ 按钮、卡片、表单等组件必须风格统一
+- ✅ 颜色、圆角、阴影、字体大小等必须使用统一的设计规范
+
+### 统一的页面布局规范（适用于列表/表格类页面）
+
+**适用场景说明**：
+- ✅ 此规范**仅适用于**有筛选栏和表格的列表类页面
+- ✅ 其他类型页面（如详情页、测试页）保持整体风格一致即可，无需严格遵循此模板
+- ✅ 关键是**所有页面的整体视觉风格必须统一**（颜色、间距、圆角、阴影等）
+
+#### 1. 筛选栏样式（标准模板）
+```html
+<div style="background: white; border-radius: var(--radius-lg); padding: 0.625rem 1rem; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); margin-bottom: 1rem;">
+  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+    <!-- 筛选项：select/input，统一高度 32px -->
+    <select class="form-select" style="width: 160px; height: 32px; padding: 0.375rem 0.75rem; font-size: 0.875rem;">
+      <option value="">全部XXX</option>
+    </select>
+    
+    <!-- 重置按钮：X 图标 -->
+    <button class="btn btn-sm" onclick="..." style="height: 32px; padding: 0 0.875rem; font-size: 0.875rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300);">
+      <svg style="width: 0.875rem; height: 0.875rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      重置
+    </button>
+
+    <!-- 刷新按钮：循环箭头图标 -->
+    <button class="btn btn-sm" onclick="..." style="height: 32px; padding: 0 0.875rem; font-size: 0.875rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300);">
+      <svg style="width: 0.875rem; height: 0.875rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      刷新
+    </button>
+  </div>
+</div>
+```
+
+**关键点**：
+- 必须用白色背景卡片包裹（`background: white`）
+- 必须有圆角（`border-radius: var(--radius-lg)`）
+- 必须有阴影（`box-shadow: var(--shadow-sm)`）
+- 必须有边框（`border: 1px solid var(--gray-200)`）
+- 所有筛选项高度统一为 32px
+- 重置按钮使用 X 图标（表示清除/取消）
+- 刷新按钮使用循环箭头图标（表示重新加载）
+- 按钮内图标大小为 0.875rem
+
+#### 2. 内容区域样式（标准模板）
+```html
+<div style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); overflow: hidden;">
+  <div style="overflow-x: auto;">
+    <table class="table">...</table>
+  </div>
+</div>
+```
+
+**关键点**：
+- 内容区域必须用白色背景卡片包裹
+- 样式与筛选栏完全一致
+- `overflow: hidden` 用于裁剪圆角内的内容
+
+#### 3. 应用场景
+**列表/表格类页面（必须遵循此规范）**：
+- ✅ 数据管理（参考：`data.js`）
+- ✅ 接口管理（参考：`interfaces.js`）
+- ✅ 模块管理（如果是列表页）
+- ✅ 场景管理（如果是列表页）
+
+**其他类型页面（保持整体风格一致即可）**：
+- ✅ 接口测试页
+- ✅ 详情页
+- ✅ 表单页
+- ✅ Dashboard 页
+
+#### 4. 实施要求
+- 创建列表类页面时，**必须**参考 `interfaces.js` 或 `data.js` 的布局样式
+- 修改页面时，**必须**保持与其他页面的风格一致
+- 所有列表类页面**必须**遵循以上规范
+- 其他类型页面保持整体视觉风格统一（颜色、间距、圆角、阴影等）
+
+## 提示词规则
+
+### 模块级提示词（`src/generated/[模块名]/.prompt.md`）
+记录内容：
+- 业务背景
+- 接口列表及说明
+- 数据表说明
+- 特殊逻辑
+- 已知问题
+
+### 全局提示词（本文件）
+- ❌ 不记录具体接口
+- ❌ 不记录业务逻辑
+- ✅ 只记录通用规则
+
+## 需求分析规则（重要！）
+
+### 适用范围
+**本规则仅适用于"项目本身的功能改进需求"，不适用于"根据接口文档生成 API 模块"的需求**
+
+- ✅ 适用：改进管理后台、修改项目结构、优化功能、添加工具等
+- ❌ 不适用：用户提供接口文档要求生成 API 模块（直接执行即可）
+
+### 分析流程
+- ✅ **当用户提出项目功能改进需求时，AI 应先分析合理性，提出改进建议**
+- ✅ **如有多种实现方案，应向用户说明各方案的优缺点**
+- ✅ **征得用户确认后再执行实施**
+- ✅ **对用户的想法保持开放态度，但要提供专业建议**
+- ✅ 用户的想法可能具有片面性，AI 应该：
+  - 分析需求的合理性
+  - 识别潜在问题
+  - 提出更优的实现方案
+  - 与用户讨论确认后再实施
+- ✅ 避免直接"照做"，而应该作为专业顾问提供建议
+- ✅ 如果用户方案存在明显问题，必须指出并建议替代方案
+
+### 示例说明
+**需要分析的情况：**
+- ❓ "我想把模块管理和接口管理合并成一个页面"
+  → 需要分析：合并是否合理，是否有更好的方案
+  
+**不需要分析的情况：**
+- ✓ "帮我生成一个用户管理模块，包含增删改查接口"
+  → 直接根据接口文档生成即可，无需讨论方案
+
