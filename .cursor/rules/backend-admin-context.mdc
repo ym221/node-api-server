@@ -1,0 +1,404 @@
+---
+alwaysApply: false
+---
+
+# 后台管理系统上下文
+
+> **本文件用途**：记录后台管理系统的功能、页面、组件，帮助 AI 快速理解后台系统的能力。
+> 
+> **触发时机**：修改后台管理功能、添加新页面、调试后台问题时。
+> 
+> **更新时机**：每当后台功能有变更（新增/删除/修改）时，必须同步更新本文件。
+
+---
+
+## 📍 后台管理位置
+
+- **目录**：`public/admin/`
+- **入口文件**：`public/admin/index.html`
+- **访问方式**：启动项目后访问 `http://localhost:3000/admin/`
+
+---
+
+## 🎯 后台管理的核心作用
+
+后台管理系统是整个项目的**调试和管理中心**，提供以下核心功能：
+
+1. **模块管理**：查看、删除 AI 生成的接口模块
+2. **接口管理**：查看接口列表、设置场景、快速测试接口
+3. **数据管理**：查看/编辑/新增/删除表数据、生成测试数据
+4. **场景管理**：创建和管理接口场景（延迟、错误、超时等）
+5. **接口测试**：完整的 HTTP 客户端，测试任意接口
+6. **使用说明**：项目使用文档
+
+**重要原则**：
+- ✅ **后台管理功能不能受影响**（最高优先级）
+- ✅ 生成的接口必须能在后台正常显示和使用
+- ✅ 如果后台功能异常，说明生成的代码或配置有问题
+
+---
+
+## 📂 文件结构
+
+```
+public/admin/
+├── index.html              # 入口文件，包含布局和路由
+├── style.css               # 全局样式
+├── app.js                  # 路由管理、导航切换
+├── components/             # 可复用组件
+│   ├── modal.js            # 模态框组件
+│   ├── toast.js            # 提示消息组件
+│   ├── table.js            # 表格组件（已废弃，改用直接生成 HTML）
+│   └── form.js             # 表单组件（已废弃）
+└── pages/                  # 页面文件
+    ├── dashboard.js        # 概览页
+    ├── data.js             # 数据管理（表格列表）
+    ├── data-detail.js      # 数据管理（表格详情）
+    ├── interfaces.js       # 接口管理
+    ├── scenarios.js        # 场景管理
+    ├── test.js             # 接口测试
+    └── help.js             # 使用说明
+```
+
+---
+
+## 🧩 核心组件
+
+### 1. Modal（模态框）
+**位置**：`public/admin/components/modal.js`
+
+**全局实例**：`window.modal`
+
+**核心方法**：
+```javascript
+// 打开模态框
+window.modal.open({
+  title: '标题',
+  content: '<div>内容</div>',
+  size: 'medium',           // 'small' | 'medium' | 'large' | 'xlarge'
+  confirmText: '确定',      // null 时隐藏 footer
+  cancelText: '取消',
+  onConfirm: () => {},
+  onOpen: () => {}          // 打开时回调
+});
+
+// 关闭模态框
+window.modal.close();
+
+// 更新模态框内容（不关闭模态框）
+window.modal.updateContent('<div>新内容</div>');
+
+// 表单模态框
+window.modal.form({
+  title: '标题',
+  fields: [
+    { name: 'name', label: '名称', type: 'text', required: true, value: '' }
+  ],
+  onSubmit: (formData) => {}
+});
+```
+
+**特性**：
+- 支持动态内容更新
+- 支持自定义尺寸
+- 支持表单验证
+- 滚动限制在模态框内部
+
+---
+
+### 2. Toast（提示消息）
+**位置**：`public/admin/components/toast.js`
+
+**全局实例**：`window.toast`
+
+**核心方法**：
+```javascript
+window.toast.success('操作成功');
+window.toast.error('操作失败');
+window.toast.warning('请注意');
+window.toast.info('提示信息');
+```
+
+**特性**：
+- 自动消失（3秒）
+- 支持多个 Toast 堆叠
+- 图标区分类型
+
+---
+
+### 3. APIClient（API 请求）
+**位置**：`public/admin/index.html` 中内联
+
+**全局实例**：`window.api`
+
+**核心方法**：
+```javascript
+// GET 请求
+const data = await api.get('/api/modules');
+
+// POST 请求
+const result = await api.post('/api/modules', { name: 'test' });
+
+// PUT 请求
+await api.put('/api/modules/1', { name: 'updated' });
+
+// DELETE 请求
+await api.delete('/api/modules/1');
+
+// 测试接口（支持自定义 headers 和 body）
+const response = await api.testRequest({
+  method: 'GET',
+  url: '/api/test',
+  headers: { 'Authorization': 'Bearer token' },
+  body: { key: 'value' }
+});
+```
+
+**特性**：
+- 自动处理 JSON
+- 自动显示错误 Toast
+- 支持自定义 headers
+
+---
+
+### 4. Router（路由管理）
+**位置**：`public/admin/app.js`
+
+**核心功能**：
+- Hash 路由（`#/path`）
+- 支持动态参数（如 `/data/:tableName`）
+- 自动更新导航高亮
+- 动态生成面包屑
+
+**路由列表**：
+- `/` - 概览页
+- `/data` - 数据管理（表格列表）
+- `/data/:tableName` - 数据管理（表格详情）
+- `/interfaces` - 接口管理
+- `/scenarios` - 场景管理
+- `/test` - 接口测试
+- `/help` - 使用说明
+
+---
+
+## 📄 页面详解
+
+### 1. 概览页 (Dashboard)
+**文件**：`public/admin/pages/dashboard.js`
+
+**功能**：
+- 显示项目统计信息（模块数、接口数、数据表数）
+- 显示快速操作卡片
+
+**数据来源**：
+- `/api/_admin/modules` - 模块列表
+- `/api/_admin/interfaces` - 接口列表
+- `/api/_admin/tables` - 数据表列表
+
+---
+
+### 2. 数据管理 (Data Management)
+**文件**：
+- `public/admin/pages/data.js` - 表格列表
+- `public/admin/pages/data-detail.js` - 表格详情
+
+#### 数据管理 - 表格列表
+**功能**：
+- 显示所有数据表（基于 `module.config.ts` 中的 `tables`）
+- 支持模块筛选
+- 点击"查看数据"跳转到表格详情页
+
+**数据来源**：
+- `/api/_admin/tables` - 获取所有数据表及记录数
+
+#### 数据管理 - 表格详情
+**功能**：
+- 查看表格数据（分页显示）
+- 搜索数据（选择字段 + 输入值）
+- 编辑数据（点击单元格直接编辑）
+- 新增数据（表单 + 一键填充）
+- 删除数据（单个/批量/清空）
+- 生成测试数据
+- 清空数据
+
+**数据来源**：
+- `/api/_admin/tables/:tableName` - 获取表数据
+- `/api/_admin/tables/:tableName/row` - 新增行
+- `/api/_admin/tables/:tableName/row/:id` - 更新/删除行
+- `/api/_admin/tables/:tableName/generate` - 生成测试数据
+- `/api/_admin/tables/:tableName/clear` - 清空数据
+
+---
+
+### 3. 接口管理 (Interface Management)
+**文件**：`public/admin/pages/interfaces.js`
+
+**功能**：
+- 显示所有接口（基于 `module.config.ts` 中的 `interfaces`）
+- 支持筛选（模块、名称、URL、方法、状态）
+- 启用/禁用接口
+- 设置接口场景
+- 快速测试接口（打开测试模态框）
+- 批量设置场景
+
+**数据来源**：
+- `/api/_admin/interfaces` - 获取接口列表
+- `/api/_admin/interfaces/:id` - 更新接口（启用/禁用、设置场景）
+
+---
+
+### 4. 场景管理 (Scenario Management)
+**文件**：`public/admin/pages/scenarios.js`
+
+**功能**：
+- 显示所有场景（5个预设 + 用户自定义）
+- 创建场景（延迟、错误率、超时时间）
+- 编辑场景
+- 删除场景（预设场景不可删除）
+- 启用/禁用场景
+- 场景搜索
+
+**预设场景**：
+1. 理想环境（无延迟、无错误）
+2. 网络延迟（2-5秒）
+3. 网络不稳定（10% 错误率）
+4. 高延迟（5-10秒）
+5. 服务器压力（20% 错误率）
+
+**数据来源**：
+- `/api/_admin/scenarios` - 获取场景列表
+- `/api/_admin/scenarios` (POST) - 创建场景
+- `/api/_admin/scenarios/:id` - 更新/删除场景
+
+---
+
+### 5. 接口测试 (Interface Testing)
+**文件**：`public/admin/pages/test.js`
+
+**功能**：
+- 选择接口 URL（下拉搜索）
+- 自动填充请求方法
+- 自定义请求头（JSON 格式）
+- 自定义请求体（JSON 格式）
+- 发送请求
+- 显示响应结果（状态码、headers、body）
+- 复制响应内容
+- 路径参数提示（检测 `:param` 并提示用户修改）
+
+**数据来源**：
+- `/api/_admin/interfaces` - 获取接口列表（用于 URL 下拉）
+- 直接调用用户选择的接口
+
+---
+
+### 6. 使用说明 (Help)
+**文件**：`public/admin/pages/help.js`
+
+**功能**：
+- 项目介绍
+- 快速开始指南
+- 后台功能说明
+- 响应格式说明
+- 场景说明
+- FAQ
+
+**更新时机**：
+- 任何功能变更时，必须同步更新本页面
+
+---
+
+## 🔧 后台管理依赖的 API
+
+所有后台管理 API 都在 `src/system/admin/` 目录下：
+
+### 模块管理 API
+**位置**：`src/system/admin/modules.ts`
+
+- `GET /api/_admin/modules` - 获取模块列表
+- `DELETE /api/_admin/modules/:name` - 删除模块
+
+### 接口管理 API
+**位置**：`src/system/admin/interfaces.ts`
+
+- `GET /api/_admin/interfaces` - 获取接口列表
+- `PUT /api/_admin/interfaces/:id` - 更新接口（启用/禁用、设置场景）
+
+### 数据管理 API
+**位置**：`src/system/admin/tables.ts`
+
+- `GET /api/_admin/tables` - 获取数据表列表
+- `GET /api/_admin/tables/:tableName` - 获取表数据（支持搜索、分页）
+- `POST /api/_admin/tables/:tableName/row` - 新增行
+- `PUT /api/_admin/tables/:tableName/row/:id` - 更新行
+- `DELETE /api/_admin/tables/:tableName/row/:id` - 删除行
+- `POST /api/_admin/tables/:tableName/batch-delete` - 批量删除
+- `POST /api/_admin/tables/:tableName/generate` - 生成测试数据
+- `POST /api/_admin/tables/:tableName/clear` - 清空数据
+
+### 场景管理 API
+**位置**：`src/system/admin/scenarios.ts`
+
+- `GET /api/_admin/scenarios` - 获取场景列表
+- `POST /api/_admin/scenarios` - 创建场景
+- `PUT /api/_admin/scenarios/:id` - 更新场景
+- `DELETE /api/_admin/scenarios/:id` - 删除场景
+
+---
+
+## 🔄 自动收集机制
+
+### 当后台功能有变更时，必须更新本文件
+
+#### 1. 新增页面
+- 在"文件结构"章节添加新页面文件
+- 在"页面详解"章节添加新页面说明
+- 在"路由管理"章节添加新路由
+
+#### 2. 修改现有功能
+- 更新对应页面的"功能"描述
+- 更新"数据来源"（如果 API 有变化）
+
+#### 3. 删除功能
+- 从所有章节中删除相关说明
+
+#### 4. 新增/修改 API
+- 在"后台管理依赖的 API"章节更新
+
+### 收集示例
+
+**示例 1**：
+- 用户说："添加一个模块编辑功能"
+- AI 识别：这是新增功能
+- AI 更新：在"模块管理 API"章节添加 `PUT /api/_admin/modules/:name`
+- AI 更新：在"模块管理"页面说明中添加"编辑模块"功能描述
+
+**示例 2**：
+- 用户说："删除日志管理功能"
+- AI 识别：这是删除功能
+- AI 更新：从所有章节中删除日志相关内容
+
+---
+
+## 🎯 后台管理开发规范
+
+### 1. 后台兼容性是最高优先级
+- 生成的接口模块必须在后台正常显示
+- `module.config.ts` 必须包含完整配置（name, description, responseFormat, tables, tableDescriptions, interfaces）
+- 任何代码变更都不能破坏后台功能
+
+### 2. 后台页面样式统一
+- 列表类页面必须遵循 `ui-guidelines.mdc` 中的标准模板
+- 使用 CSS 变量而不是硬编码颜色
+- 参考现有页面（`interfaces.js`, `data.js`）的样式
+
+### 3. 后台功能完整性
+- 所有 CRUD 操作必须有对应的 API
+- 错误处理必须友好（Toast 提示）
+- 加载状态必须明确（loading 提示）
+
+---
+
+**最后提醒**：
+- 本文件是后台管理系统的"说明书"
+- 任何后台变更都必须同步更新本文件
+- 后台管理是整个项目的核心，必须保证其稳定性和可用性

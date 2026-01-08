@@ -1,0 +1,440 @@
+---
+alwaysApply: false
+---
+
+# 项目整体上下文
+
+> **本文件用途**：提供项目的整体架构、目录结构、核心模块说明，帮助 AI 快速理解项目全貌。
+> 
+> **触发时机**：架构调整、添加新模块、重大功能变更时。
+> 
+> **更新时机**：每当项目结构有重大变更时，必须同步更新本文件。
+
+---
+
+## 🎯 项目定位
+
+**Node API 测试服务器** - 一个 AI 驱动的 Mock API 生成和测试平台
+
+### 核心价值
+- ✅ **AI 生成接口**：用户提供接口文档，AI 自动生成可运行的接口
+- ✅ **真实数据库支持**：不是简单的 JSON Mock，而是有真实的 MySQL 数据库
+- ✅ **后台管理**：提供完整的管理界面，方便调试和测试
+- ✅ **场景模拟**：支持模拟延迟、错误、超时等场景
+
+### 使用条件
+- ✅ 需要 Cursor 编辑器（依赖 AI 生成代码）
+- ✅ 需要 MySQL 数据库
+- ✅ 仅用于开发环境，不适合生产部署
+
+### 典型使用流程
+1. 用户在 Cursor 中提供接口文档/需求文档
+2. AI 根据规则生成接口模块到 `src/generated/[模块名]/`
+3. 用户运行 `init-db.ts` 初始化数据库表
+4. 用户在后台管理页面（`http://localhost:3000/admin/`）查看、测试接口
+
+---
+
+## 📂 项目目录结构
+
+```
+项目根目录/
+├── src/                        # 后端源代码
+│   ├── core/                   # 【核心模块】基础功能
+│   │   ├── BaseModel.ts        # 数据模型基类（CRUD 封装）
+│   │   ├── Response.ts         # 响应格式封装（B2B/ERP/Ebooking）
+│   │   └── ErrorHandler.ts    # 全局错误处理
+│   │
+│   ├── config/                 # 【配置模块】系统配置
+│   │   ├── database.ts         # MySQL 数据库连接
+│   │   ├── cors.ts             # CORS 配置
+│   │   └── upload.ts           # 文件上传配置
+│   │
+│   ├── middlewares/            # 【中间件模块】请求处理
+│   │   ├── requestLogger.ts   # 请求日志记录
+│   │   ├── delay.ts            # 延迟模拟
+│   │   ├── mockError.ts        # 错误模拟
+│   │   └── interfaceControl.ts # 接口控制（场景、启用/禁用）
+│   │
+│   ├── utils/                  # 【工具模块】辅助功能
+│   │   ├── logger.ts           # 日志工具
+│   │   └── faker.ts            # 智能数据生成（根据表结构生成测试数据）
+│   │
+│   ├── system/                 # 【系统模块】后台管理 API
+│   │   └── admin/
+│   │       ├── modules.ts      # 模块管理 API
+│   │       ├── interfaces.ts   # 接口管理 API
+│   │       ├── tables.ts       # 数据管理 API
+│   │       ├── scenarios.ts    # 场景管理 API
+│   │       └── routes.ts       # 系统路由注册
+│   │
+│   ├── generated/              # 【生成模块】AI 生成的接口
+│   │   └── [模块名]/           # 每个模块一个文件夹
+│   │       ├── .prompt.md          # 模块级提示词（业务逻辑记录）
+│   │       ├── module.config.ts    # 模块配置（表、接口列表）
+│   │       ├── types.ts            # TypeScript 类型定义
+│   │       ├── model.ts            # 数据模型（继承 BaseModel）
+│   │       ├── controller.ts       # 控制器（业务逻辑）
+│   │       ├── routes.ts           # 路由配置
+│   │       ├── schema.sql          # 数据库表结构
+│   │       └── init-db.ts          # 数据库初始化脚本
+│   │
+│   ├── routes/                 # 【路由模块】路由汇总
+│   │   └── index.ts            # 自动加载 generated 模块的路由
+│   │
+│   ├── app.ts                  # Express 应用配置
+│   └── server.ts               # 服务器入口
+│
+├── public/                     # 前端静态文件
+│   └── admin/                  # 【后台管理】管理界面
+│       ├── index.html          # 入口文件
+│       ├── style.css           # 全局样式
+│       ├── app.js              # 路由管理
+│       ├── components/         # 可复用组件（Modal、Toast）
+│       └── pages/              # 页面文件（Dashboard、Data、Interfaces 等）
+│
+├── scripts/                    # 【脚本模块】数据库初始化脚本
+│   ├── db-init.sql             # 数据库初始化 SQL
+│   └── db-init.ts              # 数据库初始化脚本
+│
+├── .cursor/                    # Cursor AI 规则
+│   └── rules/                  # AI 规则文件
+│       ├── ai-rules.mdc            # 主规则（索引、工作流程）
+│       ├── api-generation.mdc      # API 生成规则
+│       ├── ui-guidelines.mdc       # UI 设计规范
+│       ├── backend-admin-context.mdc # 后台管理上下文
+│       └── project-context.mdc     # 项目整体上下文（本文件）
+│
+├── .env                        # 环境变量（数据库配置等）
+├── package.json                # 项目依赖
+├── tsconfig.json               # TypeScript 配置
+└── README.md                   # 项目说明
+```
+
+---
+
+## 🧩 核心模块说明
+
+### 1. 核心模块 (`src/core/`)
+
+#### BaseModel.ts
+**作用**：数据模型基类，封装常用 CRUD 操作
+
+**提供的方法**：
+- `findAll(conditions)` - 查询所有记录
+- `findById(id)` - 根据 ID 查询
+- `findPaginated(page, pageSize, conditions, orderBy)` - 分页查询
+- `create(data)` - 创建记录
+- `update(id, data)` - 更新记录
+- `delete(id)` - 删除记录
+- `exists(conditions)` - 检查记录是否存在
+- `rawQuery(sql, params)` - 原始 SQL 查询
+- `rawQueryOne(sql, params)` - 原始 SQL 查询（单条）
+
+**使用场景**：所有生成的模块的 `model.ts` 都继承此类
+
+---
+
+#### Response.ts
+**作用**：统一响应格式封装，支持多种响应格式
+
+**支持的格式**：
+- **B2B**：`{ success, code, message, data }`（小写字段）
+- **ERP**：`{ Success, Code, Message, Data }`（大写字段）
+- **Ebooking**：与 B2B 格式一致
+
+**提供的方法**：
+- `Res.success(res, data, format, message)` - 成功响应
+- `Res.paginated(res, list, total, page, pageSize, format)` - 分页响应
+- `Res.badRequest(res, message)` - 400 错误
+- `Res.notFound(res, message)` - 404 错误
+- `Res.serverError(res, message)` - 500 错误
+
+**重要规则**：
+- 所有格式的成功响应 `code` 都是 `0`
+- 必须使用 `moduleConfig.responseFormat` 指定格式
+
+---
+
+#### ErrorHandler.ts
+**作用**：全局错误处理中间件
+
+**功能**：
+- 捕获所有未处理的异常
+- 返回统一的错误响应
+- 记录错误日志
+
+---
+
+### 2. 配置模块 (`src/config/`)
+
+#### database.ts
+**作用**：MySQL 数据库连接池
+
+**导出**：
+- `db.query(sql, params)` - 执行 SQL 查询
+- `db` - 数据库连接实例
+
+**配置来源**：`.env` 文件
+
+---
+
+#### cors.ts
+**作用**：CORS 跨域配置
+
+**配置**：允许所有来源（开发环境）
+
+---
+
+#### upload.ts
+**作用**：文件上传配置（Multer）
+
+**功能**：暂时保留，未使用
+
+---
+
+### 3. 中间件模块 (`src/middlewares/`)
+
+#### requestLogger.ts
+**作用**：记录所有请求日志
+
+**记录内容**：
+- 请求时间
+- 请求方法
+- 请求路径
+- 客户端 IP
+- 响应状态码
+- 响应时间
+
+---
+
+#### interfaceControl.ts
+**作用**：接口控制中间件（最核心的中间件）
+
+**功能**：
+1. 检查接口是否被禁用
+2. 根据接口配置的场景，应用延迟、错误、超时
+
+**配置存储**：内存中（`interfaceConfigs` Map）
+
+**后台管理调用**：通过 `/api/_admin/interfaces/:id` 修改配置
+
+---
+
+#### delay.ts / mockError.ts
+**作用**：延迟模拟和错误模拟中间件
+
+**功能**：`interfaceControl.ts` 已包含这些功能，这两个文件已废弃
+
+---
+
+### 4. 工具模块 (`src/utils/`)
+
+#### faker.ts
+**作用**：智能数据生成工具
+
+**核心功能**：
+- 根据表结构自动生成测试数据
+- 智能识别字段类型（名称、邮箱、电话、价格等）
+- 生成符合约束的数据（唯一值、枚举值、范围限制）
+
+**使用场景**：
+- 后台管理的"生成测试数据"功能
+- 模块初始化脚本
+
+---
+
+#### logger.ts
+**作用**：日志工具（Winston）
+
+**功能**：
+- 请求日志记录到文件
+- 错误日志记录
+
+---
+
+### 5. 系统模块 (`src/system/admin/`)
+
+**作用**：提供后台管理所需的所有 API
+
+**包含的 API**：
+- 模块管理（查看、删除模块）
+- 接口管理（查看、启用/禁用、设置场景）
+- 数据管理（查看、编辑、新增、删除表数据）
+- 场景管理（CRUD 场景）
+
+**详细说明**：见 `backend-admin-context.mdc`
+
+---
+
+### 6. 生成模块 (`src/generated/`)
+
+**作用**：存放 AI 生成的接口模块
+
+**特点**：
+- 完全解耦：每个模块独立，删除文件夹不影响其他模块
+- 自包含：每个模块包含完整的 Model、Controller、Routes
+- 可追溯：每个模块有 `.prompt.md` 记录业务逻辑
+
+**生成规则**：见 `api-generation.mdc`
+
+---
+
+### 7. 路由模块 (`src/routes/`)
+
+#### index.ts
+**作用**：自动加载所有生成的模块路由
+
+**工作原理**：
+1. 扫描 `src/generated/` 目录
+2. 动态加载每个模块的 `routes.ts`
+3. 注册到 `/api` 前缀下
+
+**环境适配**：
+- 开发环境（`tsx watch`）：直接加载 `.ts` 文件
+- 生产环境（编译后）：加载 `.js` 文件
+
+---
+
+### 8. 后台管理 (`public/admin/`)
+
+**作用**：提供可视化的管理界面
+
+**核心页面**：
+- Dashboard - 概览
+- Data Management - 数据管理
+- Interface Management - 接口管理
+- Scenario Management - 场景管理
+- Interface Testing - 接口测试
+- Help - 使用说明
+
+**详细说明**：见 `backend-admin-context.mdc`
+
+---
+
+## 🔄 数据流
+
+### 1. 请求处理流程
+```
+客户端请求
+  ↓
+requestLogger (记录日志)
+  ↓
+interfaceControl (检查禁用、应用场景)
+  ↓
+路由匹配 (src/routes/index.ts)
+  ↓
+Controller (src/generated/[模块]/controller.ts)
+  ↓
+Model (src/generated/[模块]/model.ts)
+  ↓
+BaseModel (src/core/BaseModel.ts)
+  ↓
+MySQL 数据库
+  ↓
+Response (src/core/Response.ts)
+  ↓
+返回客户端
+```
+
+### 2. 模块生成流程
+```
+用户提供接口文档
+  ↓
+AI 读取 api-generation.mdc
+  ↓
+AI 生成模块文件到 src/generated/[模块名]/
+  ↓
+用户运行 init-db.ts 创建数据库表
+  ↓
+自动加载路由 (src/routes/index.ts)
+  ↓
+后台管理自动识别模块 (module.config.ts)
+  ↓
+用户在后台管理页面测试接口
+```
+
+---
+
+## 🎯 技术栈
+
+### 后端
+- **框架**：Express.js
+- **语言**：TypeScript
+- **数据库**：MySQL
+- **日志**：Winston
+- **数据生成**：@faker-js/faker
+
+### 前端
+- **框架**：原生 JavaScript（无框架）
+- **样式**：Tailwind CSS（本地文件）
+- **路由**：Hash 路由（自实现）
+- **组件**：Modal、Toast（自实现）
+
+### 开发工具
+- **TypeScript 编译**：tsx
+- **代码规范**：Cursor AI 规则文件
+
+---
+
+## 🔄 自动收集机制
+
+### 当项目结构有重大变更时，必须更新本文件
+
+#### 1. 新增核心模块
+- 在"项目目录结构"章节添加新目录
+- 在"核心模块说明"章节添加新模块说明
+
+#### 2. 修改现有模块
+- 更新对应模块的"作用"和"功能"描述
+- 如果影响数据流，更新"数据流"章节
+
+#### 3. 删除模块
+- 从所有章节中删除相关说明
+
+#### 4. 技术栈变更
+- 更新"技术栈"章节
+
+### 收集示例
+
+**示例 1**：
+- 用户说："添加 Redis 缓存支持"
+- AI 识别：这是新增核心模块
+- AI 更新：在"配置模块"章节添加 `redis.ts` 说明
+- AI 更新：在"技术栈"章节添加 Redis
+
+**示例 2**：
+- 用户说："将中间件 delay.ts 合并到 interfaceControl.ts"
+- AI 识别：这是模块整合
+- AI 更新：在"中间件模块"章节标记 `delay.ts` 为已废弃
+
+---
+
+## 🚨 重要原则
+
+### 1. 完全解耦的模块设计
+- `src/generated/` 下的模块完全独立
+- 删除模块文件夹不会影响其他模块或系统核心
+- 后台管理通过 `module.config.ts` 动态识别模块
+
+### 2. 后台管理是最高优先级
+- 所有功能变更都不能破坏后台管理
+- 生成的模块必须在后台正常显示和使用
+- `module.config.ts` 必须包含完整配置
+
+### 3. AI 驱动的开发模式
+- 所有接口模块都由 AI 生成
+- 规则文件定义了生成标准
+- 用户不应手动修改生成的模块（除非记录在 `.prompt.md`）
+
+### 4. 仅用于开发环境
+- 不适合生产部署
+- 没有身份认证和权限控制
+- 数据库连接配置简单
+
+---
+
+**最后提醒**：
+- 本文件是项目的"鸟瞰图"
+- 任何架构级别的变更都必须同步更新本文件
+- 详细的技术规范在其他专项规则文件中（`api-generation.mdc`、`ui-guidelines.mdc`）

@@ -1,0 +1,503 @@
+---
+alwaysApply: false
+---
+
+# UI/UX 设计规范
+
+> **本文件用途**：当开发或修改前端页面时，AI 应参考本规范确保界面美观、一致。
+> 
+> **触发时机**：开发后台管理页面、修改页面样式、创建新组件时。
+
+---
+
+## 🎨 核心设计原则
+
+### 1. 美观性（最高优先级）
+- ✅ **所有样式必须采用最优方案**
+- ✅ **界面必须美观、现代化**
+- ✅ **拒绝粗糙、简陋的设计**
+
+### 2. 一致性（最高优先级）
+- ✅ **所有页面的整体视觉风格必须统一**
+- ✅ 颜色、圆角、阴影、字体大小等必须使用统一的设计规范
+- ✅ 按钮、卡片、表单等组件必须风格统一
+
+### 3. 现代 UI 设计原则
+- ✅ 合理的间距和留白
+- ✅ 统一的颜色系统
+- ✅ 清晰的视觉层级
+- ✅ 流畅的交互反馈
+- ✅ 响应式布局
+
+---
+
+## 📐 统一的页面布局规范
+
+### 适用场景说明
+
+#### 列表/表格类页面（必须遵循此规范）
+这些页面有筛选栏和数据表格，必须严格遵循以下标准模板：
+- ✅ 数据管理（参考：`public/admin/pages/data.js`）
+- ✅ 接口管理（参考：`public/admin/pages/interfaces.js`）
+- ✅ 模块管理（如果是列表页）
+- ✅ 场景管理（如果是列表页）
+
+#### 其他类型页面（保持整体风格一致即可）
+这些页面无需严格遵循标准模板，但整体视觉风格必须统一：
+- ✅ 接口测试页
+- ✅ 详情页
+- ✅ 表单页
+- ✅ Dashboard 页
+
+---
+
+## 📋 标准模板：列表/表格类页面
+
+### 1️⃣ 筛选栏样式（标准模板）
+
+**HTML 结构**：
+```html
+<div style="background: white; border-radius: var(--radius-lg); padding: 0.625rem 1rem; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); margin-bottom: 1rem;">
+  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+    <!-- 筛选项：select/input，统一高度 32px -->
+    <select class="form-select" style="width: 160px; height: 32px; padding: 0.375rem 0.75rem; font-size: 0.875rem;">
+      <option value="">全部XXX</option>
+    </select>
+    
+    <!-- 重置按钮：X 图标 -->
+    <button class="btn btn-sm" onclick="resetFilters()" style="height: 32px; padding: 0 0.875rem; font-size: 0.875rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300);">
+      <svg style="width: 0.875rem; height: 0.875rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+      重置
+    </button>
+
+    <!-- 刷新按钮：循环箭头图标 -->
+    <button class="btn btn-sm" onclick="loadData()" style="height: 32px; padding: 0 0.875rem; font-size: 0.875rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300);">
+      <svg style="width: 0.875rem; height: 0.875rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      刷新
+    </button>
+  </div>
+</div>
+```
+
+**关键点**：
+- ✅ **白色背景卡片**：`background: white`
+- ✅ **圆角**：`border-radius: var(--radius-lg)`
+- ✅ **阴影**：`box-shadow: var(--shadow-sm)`
+- ✅ **边框**：`border: 1px solid var(--gray-200)`
+- ✅ **下边距**：`margin-bottom: 1rem`
+- ✅ **内边距**：`padding: 0.625rem 1rem`（上下紧凑，左右正常）
+- ✅ **Flex 布局**：`display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;`
+- ✅ **统一高度**：所有筛选项和按钮高度 `32px`
+- ✅ **重置按钮图标**：X 图标（表示清除/取消）
+- ✅ **刷新按钮图标**：循环箭头图标（表示重新加载）
+- ✅ **图标大小**：`0.875rem`
+
+**常用筛选项尺寸**：
+- 短选项（如状态）：`width: 110px`
+- 中等选项（如模块）：`width: 140px` 或 `160px`
+- 长选项（如名称、URL）：`width: 180px`
+- 搜索输入框：`width: 300px`（固定宽度，确保其他按钮有空间）
+
+---
+
+### 2️⃣ 内容区域样式（标准模板）
+
+**HTML 结构**：
+```html
+<div style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); overflow: hidden;">
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>列名</th>
+          ...
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>数据</td>
+          ...
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+```
+
+**关键点**：
+- ✅ **白色背景卡片**：`background: white`
+- ✅ **圆角**：`border-radius: var(--radius-lg)`
+- ✅ **阴影**：`box-shadow: var(--shadow-sm)`
+- ✅ **边框**：`border: 1px solid var(--gray-200)`
+- ✅ **隐藏溢出**：`overflow: hidden`（裁剪圆角内的内容）
+- ✅ **内部容器**：`overflow-x: auto`（支持横向滚动）
+- ✅ **样式与筛选栏完全一致**
+
+---
+
+### 3️⃣ 表格样式规范
+
+**基础 Table 类**：
+使用 `.table` 类，已在 `public/admin/style.css` 中定义。
+
+**增强样式**：
+- ✅ **斑马纹**：`.zebra-table` 类（用于数据管理等页面）
+- ✅ **可编辑单元格**：`.editable-cell` 类（用于数据管理详情页）
+- ✅ **固定单元格高度**：防止内容换行导致高度不一致
+- ✅ **文本溢出处理**：`overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+- ✅ **Hover 显示完整内容**：使用 `title` 属性
+
+**操作列宽度建议**：
+- 1 个按钮：`120px`
+- 2 个按钮：`140px`
+- 3 个按钮：`200px`
+- 4+ 个按钮：`240px`
+
+**防止按钮换行**：
+```html
+<td style="width: 240px;">
+  <div style="display: flex; gap: 0.5rem; flex-wrap: nowrap;">
+    <button style="white-space: nowrap; flex-shrink: 0;">按钮1</button>
+    <button style="white-space: nowrap; flex-shrink: 0;">按钮2</button>
+  </div>
+</td>
+```
+
+---
+
+## 🎨 CSS 变量系统
+
+项目使用 CSS 变量定义颜色、圆角、阴影等，确保风格统一。
+
+### 颜色系统
+```css
+/* 主色调 */
+--primary-50: #eff6ff;
+--primary-100: #dbeafe;
+--primary-500: #3b82f6;
+--primary-600: #2563eb;
+--primary-700: #1d4ed8;
+
+/* 灰色系 */
+--gray-50: #f9fafb;
+--gray-100: #f3f4f6;
+--gray-200: #e5e7eb;
+--gray-300: #d1d5db;
+--gray-700: #374151;
+--gray-900: #111827;
+
+/* 语义色 */
+--success: #10b981;
+--warning: #f59e0b;
+--danger: #ef4444;
+--info: #3b82f6;
+```
+
+### 圆角
+```css
+--radius-sm: 0.25rem;   /* 4px */
+--radius-md: 0.375rem;  /* 6px */
+--radius-lg: 0.5rem;    /* 8px */
+--radius-xl: 0.75rem;   /* 12px */
+```
+
+### 阴影
+```css
+--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+```
+
+**使用示例**：
+```css
+.card {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+}
+```
+
+---
+
+## 🔘 按钮规范
+
+### 按钮类型
+```html
+<!-- 主要按钮 -->
+<button class="btn btn-primary">主要操作</button>
+
+<!-- 成功按钮 -->
+<button class="btn btn-success">新增/创建</button>
+
+<!-- 危险按钮 -->
+<button class="btn btn-danger">删除/清空</button>
+
+<!-- 次要按钮 -->
+<button class="btn btn-secondary">取消/关闭</button>
+
+<!-- 小按钮 -->
+<button class="btn btn-sm">小按钮</button>
+```
+
+### 按钮尺寸
+- 默认：`height: 36px; padding: 0.5rem 1rem;`
+- 小按钮：`height: 32px; padding: 0.375rem 0.875rem; font-size: 0.875rem;`
+
+### 图标按钮
+```html
+<button class="btn btn-sm">
+  <svg style="width: 0.875rem; height: 0.875rem; margin-right: 0.25rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <!-- SVG path -->
+  </svg>
+  按钮文本
+</button>
+```
+
+**图标库**：
+- 使用 Heroicons（通过 SVG 直接内联）
+- 图标大小：`0.875rem`（14px）或 `1rem`（16px）
+- 图标与文本间距：`margin-right: 0.25rem`
+
+---
+
+## 📱 表单规范
+
+### 输入框
+```html
+<input 
+  type="text" 
+  class="form-input" 
+  placeholder="请输入..."
+  style="height: 36px; padding: 0.5rem 0.75rem;"
+/>
+```
+
+### 下拉选择
+```html
+<select 
+  class="form-select"
+  style="height: 36px; padding: 0.5rem 0.75rem;"
+>
+  <option value="">请选择...</option>
+</select>
+```
+
+### 标签与输入框
+```html
+<div style="margin-bottom: 1rem;">
+  <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">字段名称</label>
+  <input type="text" class="form-input" />
+</div>
+```
+
+---
+
+## 🎭 模态框规范
+
+### 模态框结构
+```javascript
+window.modal.open({
+  title: '标题',
+  content: `<div>内容</div>`,
+  confirmText: '确定',
+  cancelText: '取消',
+  size: 'medium', // 'small', 'medium', 'large'
+  onConfirm: () => {
+    // 确认逻辑
+  }
+});
+```
+
+### 模态框尺寸
+- `small`: `max-width: 400px`
+- `medium`: `max-width: 600px`
+- `large`: `max-width: 800px`
+- `xlarge`: `max-width: 90%`（数据管理详情页）
+
+### 模态框滚动
+- ✅ 模态框容器：`align-items: flex-start; padding: 2rem 1rem;`
+- ✅ 模态框内容：`max-height: calc(100vh - 4rem); display: flex; flex-direction: column;`
+- ✅ 模态框主体：`overflow-y: auto; flex: 1; min-height: 0;`
+
+---
+
+## 🎯 Toast 通知规范
+
+### Toast 类型
+```javascript
+// 成功提示
+window.toast.success('操作成功');
+
+// 错误提示
+window.toast.error('操作失败');
+
+// 警告提示
+window.toast.warning('请注意');
+
+// 信息提示
+window.toast.info('提示信息');
+```
+
+### Toast 图标
+- 成功：✓ 勾选图标（绿色）
+- 错误：⚠ 警告图标（红色）
+- 警告：⚠ 警告图标（黄色）
+- 信息：ⓘ 信息图标（蓝色）
+
+**注意**：错误类型的图标应该是警告图标（三角形感叹号），而不是 X 图标（X 图标用于关闭按钮）。
+
+---
+
+## 🎨 间距规范
+
+### 标准间距
+- `0.25rem` (4px) - 极小间距
+- `0.5rem` (8px) - 小间距
+- `0.75rem` (12px) - 中等间距
+- `1rem` (16px) - 标准间距
+- `1.5rem` (24px) - 大间距
+- `2rem` (32px) - 极大间距
+
+### 使用场景
+- 表单项之间：`margin-bottom: 1rem`
+- 按钮之间：`gap: 0.5rem`
+- 卡片之间：`margin-bottom: 1rem`
+- 页面内边距：`padding: 1.5rem`
+
+---
+
+## 📊 数据展示规范
+
+### 表格斑马纹
+```css
+.zebra-table tbody tr:nth-child(even) {
+  background-color: var(--gray-50);
+}
+
+.zebra-table tbody tr:hover {
+  background-color: var(--primary-50) !important;
+  transition: background-color 0.15s ease;
+}
+```
+
+### 空状态
+```html
+<div style="text-align: center; padding: 3rem 1rem; color: var(--gray-500);">
+  <svg style="width: 4rem; height: 4rem; margin: 0 auto 1rem; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <!-- 空状态图标 -->
+  </svg>
+  <p style="font-size: 1rem; margin: 0;">暂无数据</p>
+</div>
+```
+
+### 加载状态
+```html
+<div style="text-align: center; padding: 2rem;">
+  <div class="spinner"></div>
+  <p style="margin-top: 1rem; color: var(--gray-500);">加载中...</p>
+</div>
+```
+
+---
+
+## 🎪 交互反馈规范
+
+### Hover 效果
+- ✅ 表格行：`background-color: var(--primary-50)`
+- ✅ 按钮：轻微亮度变化
+- ✅ 可编辑单元格：边框高亮
+
+### 过渡动画
+```css
+/* 标准过渡 */
+transition: all 0.15s ease;
+
+/* 背景色过渡 */
+transition: background-color 0.15s ease;
+
+/* 边框色过渡 */
+transition: border-color 0.15s ease;
+```
+
+### 禁用状态
+```css
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+```
+
+---
+
+## 📐 响应式布局
+
+### 断点
+- 小屏幕：`< 768px`
+- 中等屏幕：`768px - 1024px`
+- 大屏幕：`> 1024px`
+
+### Flex 布局
+```css
+/* 自动换行 */
+display: flex;
+flex-wrap: wrap;
+gap: 0.5rem;
+
+/* 不换行（操作按钮） */
+display: flex;
+flex-wrap: nowrap;
+gap: 0.5rem;
+```
+
+---
+
+## 🔄 规则自动收集机制
+
+### 当发现新的 UI 问题时
+1. **识别问题类型**：
+   - ✅ 样式不统一？更新"统一的页面布局规范"
+   - ✅ 组件缺少规范？添加到相应章节
+   - ✅ 交互不流畅？更新"交互反馈规范"
+
+2. **更新方式**：
+   - 在本文件对应章节添加说明
+   - 提供完整的代码示例
+   - 说明适用场景和注意事项
+
+3. **验证标准**：
+   - ✅ 新页面/组件是否遵循规范
+   - ✅ 整体视觉风格是否统一
+   - ✅ 是否有清晰的代码示例
+
+---
+
+## ✅ 实施要求
+
+### 创建新页面时
+- ✅ 确定页面类型（列表/详情/表单/测试）
+- ✅ 如果是列表类页面，严格遵循标准模板
+- ✅ 如果是其他类型页面，保持整体风格一致
+- ✅ 使用 CSS 变量而不是硬编码颜色值
+
+### 修改现有页面时
+- ✅ 保持与其他页面的风格一致
+- ✅ 不要引入新的颜色、圆角、阴影值
+- ✅ 确保间距、字体大小符合规范
+
+### 参考页面
+- **列表类页面**：`public/admin/pages/interfaces.js`、`public/admin/pages/data.js`
+- **详情类页面**：`public/admin/pages/data-detail.js`
+- **测试类页面**：`public/admin/pages/test.js`
+
+---
+
+**最后提醒**：
+- UI 是用户的第一印象，必须美观、现代化
+- 风格统一比单个页面的"创新"更重要
+- 任何 UI 变更都应考虑对整体的影响
+- 发现通用的 UI 问题时，立即更新本文件！
