@@ -10,23 +10,43 @@ export { faker };
 export class SmartFieldGenerator {
   /**
    * 根据字段名生成值
+   * @param fieldName 字段名
+   * @param fieldType 字段类型
+   * @param uniqueIndex 当前生成的索引，用于保证唯一性
    */
-  static generateByFieldName(fieldName: string, fieldType: string): any {
+  static generateByFieldName(fieldName: string, fieldType: string, uniqueIndex: number = 0): any {
     const lowerName = fieldName.toLowerCase();
+
+    // 订单号 - 保证唯一性
+    if (lowerName.includes('order_no') || lowerName.includes('orderno')) {
+      return `ORD${Date.now()}${String(uniqueIndex).padStart(5, '0')}`;
+    }
+
+    // 发票号 - 保证唯一性
+    if (lowerName.includes('invoice_no') || lowerName.includes('invoiceno')) {
+      return `INV${Date.now()}${String(uniqueIndex).padStart(5, '0')}`;
+    }
+
+    // 单据号/编号 - 保证唯一性
+    if ((lowerName.includes('_no') || lowerName.includes('_code')) && 
+        !lowerName.includes('phone') && !lowerName.includes('tel')) {
+      return `NO${Date.now()}${String(uniqueIndex).padStart(5, '0')}`;
+    }
 
     // 姓名相关
     if (lowerName.includes('name') || lowerName.includes('username')) {
       return faker.person.fullName();
     }
 
-    // 邮箱
+    // 邮箱 - 保证唯一性
     if (lowerName.includes('email')) {
-      return faker.internet.email();
+      return `user${uniqueIndex}_${Date.now()}@example.com`;
     }
 
-    // 手机号
+    // 手机号 - 保证唯一性
     if (lowerName.includes('phone') || lowerName.includes('mobile') || lowerName.includes('tel')) {
-      return faker.phone.number('1##########');
+      const basePhone = 13000000000 + uniqueIndex;
+      return String(basePhone).substring(0, 11);
     }
 
     // 地址
@@ -140,13 +160,16 @@ export class SmartFieldGenerator {
 
   /**
    * 批量生成数据
+   * @param fields 字段列表
+   * @param count 生成数量
    */
   static generateBatch(fields: Array<{ name: string; type: string }>, count: number): any[] {
     const result = [];
     for (let i = 0; i < count; i++) {
       const row: any = {};
       for (const field of fields) {
-        row[field.name] = this.generateByFieldName(field.name, field.type);
+        // 传入索引以保证唯一性
+        row[field.name] = this.generateByFieldName(field.name, field.type, i);
       }
       result.push(row);
     }
