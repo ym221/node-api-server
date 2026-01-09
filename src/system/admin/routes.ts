@@ -55,6 +55,9 @@ import {
   saveCurrentAsScenario,
 } from './scenarios';
 
+// 路由重载
+import { reloadRoutes } from './reload';
+
 const router = Router();
 
 // ===== 健康检查 =====
@@ -102,6 +105,9 @@ router.post('/scenarios', asyncHandler(createScenario));
 router.put('/scenarios/:scenarioId', asyncHandler(updateScenario));
 router.delete('/scenarios/:scenarioId', asyncHandler(deleteScenario));
 router.post('/scenarios/save-current', asyncHandler(saveCurrentAsScenario));
+
+// ===== 路由重载 =====
+router.post('/reload-routes', asyncHandler(reloadRoutes));
 
 export default router;
 

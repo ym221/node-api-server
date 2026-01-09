@@ -645,8 +645,18 @@ async function verify() {
   
   let allPassed = true;
   
+  // 0. 先重新加载路由（确保新模块被识别）
+  console.log('0️⃣ 重新加载路由...');
+  try {
+    await axios.post(`${BASE_URL}/api/_admin/reload-routes`);
+    console.log('   ✅ 路由已重新加载');
+  } catch (error: any) {
+    console.log('   ⚠️  路由重载失败，可能需要手动重启服务器');
+    console.log('   错误:', error.message);
+  }
+  
   // 1. 验证接口
-  console.log('1️⃣ 验证接口功能...');
+  console.log('\n1️⃣ 验证接口功能...');
   const targetInterface = selectInterfaceToVerify();
   console.log(`   选择验证: ${targetInterface.description}`);
   

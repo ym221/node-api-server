@@ -146,35 +146,49 @@ export async function deleteModule(req: Request, res: Response) {
     }
 
     // 读取模块配置，获取关联的数据表
-    const configPath = path.join(modulePath, 'module.config.js');
+    // 优先尝试 .ts 文件（开发模式），其次 .js 文件（生产模式）
+    const configPathTs = path.join(modulePath, 'module.config.ts');
+    const configPathJs = path.join(modulePath, 'module.config.js');
     let tables: string[] = [];
     
-    if (fs.existsSync(configPath)) {
+    // 尝试读取 TS 文件
+    if (fs.existsSync(configPathTs)) {
       try {
-        // 动态导入编译后的模块配置
-        delete require.cache[require.resolve(configPath)];
-        const config = require(configPath);
-        tables = config.default?.tables || [];
+        delete require.cache[require.resolve(configPathTs)];
+        const config = require(configPathTs);
+        tables = config.moduleConfig?.tables || [];
       } catch (err) {
-        console.error(`读取模块配置失败 (${moduleName}):`, err);
+        console.error(`读取模块配置失败 (${moduleName}.ts):`, err);
+      }
+    } 
+    // 如果 TS 文件不存在或读取失败，尝试 JS 文件
+    if (tables.length === 0 && fs.existsSync(configPathJs)) {
+      try {
+        delete require.cache[require.resolve(configPathJs)];
+        const config = require(configPathJs);
+        tables = config.moduleConfig?.tables || config.default?.tables || [];
+      } catch (err) {
+        console.error(`读取模块配置失败 (${moduleName}.js):`, err);
       }
     }
 
-    // 删除模块文件夹
-    fs.rmSync(modulePath, { recursive: true, force: true });
-
-    // 删除关联的数据表
+    // 删除关联的数据表（在删除文件夹之前）
     const deletedTables: string[] = [];
     if (tables.length > 0) {
       for (const table of tables) {
         try {
           await execute(`DROP TABLE IF EXISTS \`${table}\``);
           deletedTables.push(table);
+          console.log(`✅ 已删除数据表: ${table}`);
         } catch (err) {
-          console.error(`删除数据表失败 (${table}):`, err);
+          console.error(`❌ 删除数据表失败 (${table}):`, err);
         }
       }
     }
+
+    // 删除模块文件夹
+    fs.rmSync(modulePath, { recursive: true, force: true });
+    console.log(`✅ 已删除模块文件夹: ${moduleName}`);
 
     return Res.success(
       res, 

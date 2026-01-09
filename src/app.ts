@@ -1,4 +1,4 @@
-import express, { Application } from 'express';
+import express, { Application, Router } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -10,6 +10,19 @@ import { logger } from './utils/logger';
 
 // 加载环境变量
 dotenv.config();
+
+// 存储当前的动态路由
+let currentGeneratedRouter: Router | null = null;
+
+/**
+ * 重新加载生成的模块路由
+ */
+export function reloadGeneratedRoutes(): Router {
+  const { loadGeneratedRoutes } = require('./routes/index');
+  currentGeneratedRouter = loadGeneratedRoutes(null);
+  logger.info('🔄 路由已重新加载');
+  return currentGeneratedRouter;
+}
 
 /**
  * 创建 Express 应用
@@ -41,10 +54,15 @@ export function createApp(): Application {
   const adminRoutes = require('./system/admin/routes').default;
   app.use('/api/_admin', adminRoutes);
 
-  // 动态加载生成的模块路由
-  const { loadGeneratedRoutes } = require('./routes/index');
-  const generatedRoutes = loadGeneratedRoutes(app);
-  app.use('/api', generatedRoutes);
+  // 动态加载生成的模块路由（使用代理路由）
+  currentGeneratedRouter = reloadGeneratedRoutes();
+  app.use('/api', (req, res, next) => {
+    if (currentGeneratedRouter) {
+      currentGeneratedRouter(req, res, next);
+    } else {
+      next();
+    }
+  });
 
   // 404 处理
   app.use(notFoundHandler);
