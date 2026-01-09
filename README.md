@@ -255,22 +255,30 @@ A: 数据存在 MySQL 里，只要不清空数据库，数据就在。但记住�
 ```
 node-api-server/
 ├── src/
-│   ├── generated/              # AI 生成的接口（不会提交到 git）
-│   │   ├── users/             # 用户模块
-│   │   ├── products/          # 商品模块
-│   │   └── ...                # 其他模块
-│   ├── template/              # 接口模板（AI 参考这个生成代码）
+│   ├── generated/              # AI 生成的接口（动态生成，不纳入版本管理）
+│   │   └── [模块名]/          # 每个模块独立目录
+│   │       ├── .prompt.md     # 模块业务逻辑说明
+│   │       ├── module.config.ts
+│   │       ├── types.ts
+│   │       ├── model.ts
+│   │       ├── controller.ts
+│   │       ├── routes.ts
+│   │       ├── schema.sql
+│   │       ├── init-db.ts    # 数据库初始化脚本
+│   │       └── verify.ts     # 验证脚本（自动验证功能）
 │   ├── system/                # 系统功能（后台管理 API）
+│   ├── core/                  # 核心类（Response、BaseModel）
 │   └── ...
 ├── public/admin/              # 管理后台前端
-├── .cursor/rules/             # AI 规则文档
+├── .cursor/rules/             # AI 规则文档（AI 根据这些规则生成代码）
 └── .env                       # 数据库配置
 ```
 
 **重点**：
-- `src/generated/` - 所有生成的接口都在这里，可以随时删除
-- `src/template/` - AI 生成代码的模板，不要改
-- `.cursor/rules/ai-rules.md` - AI 的行为规则，不要改
+- `src/generated/` - 所有生成的接口都在这里，可以随时删除，不纳入 Git 版本管理
+- `.cursor/rules/` - AI 的规则文档，定义了代码生成规范
+- 每个模块包含 `.prompt.md` - 记录该模块的业务逻辑和接口说明
+- 模块是根据需求动态生成的，没有固定的模块列表
 
 ## 技术栈
 

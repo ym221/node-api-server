@@ -408,8 +408,8 @@ npm start</code></pre>
 │   ├── middlewares/       # 中间件（日志、延迟、错误模拟）
 │   ├── utils/             # 工具函数（logger、faker、helpers）
 │   ├── system/            # 系统 API（健康检查、管理接口）
-│   ├── template/          # 模块模板
-│   ├── generated/         # 生成的 API 模块（自动加载）
+│   ├── generated/         # 生成的 API 模块（动态生成，不纳入版本管理）
+│   │   └── [模块名]/     # 每个模块独立目录（含 .prompt.md 等文件）
 │   ├── routes/            # 路由加载器
 │   ├── app.ts             # Express 应用
 │   └── server.ts          # 服务器入口
@@ -420,6 +420,8 @@ npm start</code></pre>
 │       ├── style.css
 │       ├── components/    # UI 组件
 │       └── pages/         # 页面组件
+├── .cursor/
+│   └── rules/             # AI 规则文档（代码生成规范）
 ├── scripts/               # 脚本（数据库初始化等）
 ├── logs/                  # 日志文件
 ├── .env                   # 环境配置

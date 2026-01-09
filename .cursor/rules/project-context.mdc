@@ -4,11 +4,9 @@ alwaysApply: false
 
 # 项目整体上下文
 
-> **本文件用途**：提供项目的整体架构、目录结构、核心模块说明，帮助 AI 快速理解项目全貌。
+> **用途**：提供项目的整体架构、目录结构、核心模块说明，帮助 AI 快速理解项目全貌。
 > 
 > **触发时机**：架构调整、添加新模块、重大功能变更时。
-> 
-> **更新时机**：每当项目结构有重大变更时，必须同步更新本文件。
 
 ---
 
@@ -22,16 +20,12 @@ alwaysApply: false
 - ✅ **后台管理**：提供完整的管理界面，方便调试和测试
 - ✅ **场景模拟**：支持模拟延迟、错误、超时等场景
 
-### 使用条件
-- ✅ 需要 Cursor 编辑器（依赖 AI 生成代码）
-- ✅ 需要 MySQL 数据库
-- ✅ 仅用于开发环境，不适合生产部署
-
 ### 典型使用流程
-1. 用户在 Cursor 中提供接口文档/需求文档
+1. 用户在 Cursor 中提供接口文档/需求
 2. AI 根据规则生成接口模块到 `src/generated/[模块名]/`
-3. 用户运行 `init-db.ts` 初始化数据库表
-4. 用户在后台管理页面（`http://localhost:3000/admin/`）查看、测试接口
+3. AI 自动运行 `init-db.ts` 初始化数据库
+4. AI 自动运行 `verify.ts` 验证功能可用性
+5. 用户在后台管理页面（`http://localhost:3000/admin/`）查看、测试接口
 
 ---
 
@@ -40,27 +34,25 @@ alwaysApply: false
 ```
 项目根目录/
 ├── src/                        # 后端源代码
-│   ├── core/                   # 【核心模块】基础功能
+│   ├── core/                   # 核心模块：基础功能
 │   │   ├── BaseModel.ts        # 数据模型基类（CRUD 封装）
 │   │   ├── Response.ts         # 响应格式封装（B2B/ERP/Ebooking）
 │   │   └── ErrorHandler.ts    # 全局错误处理
 │   │
-│   ├── config/                 # 【配置模块】系统配置
+│   ├── config/                 # 配置模块：系统配置
 │   │   ├── database.ts         # MySQL 数据库连接
 │   │   ├── cors.ts             # CORS 配置
 │   │   └── upload.ts           # 文件上传配置
 │   │
-│   ├── middlewares/            # 【中间件模块】请求处理
+│   ├── middlewares/            # 中间件模块：请求处理
 │   │   ├── requestLogger.ts   # 请求日志记录
-│   │   ├── delay.ts            # 延迟模拟
-│   │   ├── mockError.ts        # 错误模拟
 │   │   └── interfaceControl.ts # 接口控制（场景、启用/禁用）
 │   │
-│   ├── utils/                  # 【工具模块】辅助功能
+│   ├── utils/                  # 工具模块：辅助功能
 │   │   ├── logger.ts           # 日志工具
-│   │   └── faker.ts            # 智能数据生成（根据表结构生成测试数据）
+│   │   └── faker.ts            # 智能数据生成
 │   │
-│   ├── system/                 # 【系统模块】后台管理 API
+│   ├── system/                 # 系统模块：后台管理 API
 │   │   └── admin/
 │   │       ├── modules.ts      # 模块管理 API
 │   │       ├── interfaces.ts   # 接口管理 API
@@ -68,44 +60,45 @@ alwaysApply: false
 │   │       ├── scenarios.ts    # 场景管理 API
 │   │       └── routes.ts       # 系统路由注册
 │   │
-│   ├── generated/              # 【生成模块】AI 生成的接口
+│   ├── generated/              # 生成模块：AI 生成的接口
 │   │   └── [模块名]/           # 每个模块一个文件夹
-│   │       ├── .prompt.md          # 模块级提示词（业务逻辑记录）
-│   │       ├── module.config.ts    # 模块配置（表、接口列表）
+│   │       ├── .prompt.md          # 模块级提示词
+│   │       ├── module.config.ts    # 模块配置
 │   │       ├── types.ts            # TypeScript 类型定义
-│   │       ├── model.ts            # 数据模型（继承 BaseModel）
-│   │       ├── controller.ts       # 控制器（业务逻辑）
+│   │       ├── model.ts            # 数据模型
+│   │       ├── controller.ts       # 控制器
 │   │       ├── routes.ts           # 路由配置
 │   │       ├── schema.sql          # 数据库表结构
-│   │       └── init-db.ts          # 数据库初始化脚本
+│   │       ├── init-db.ts          # 数据库初始化脚本
+│   │       └── verify.ts           # 验证脚本
 │   │
-│   ├── routes/                 # 【路由模块】路由汇总
+│   ├── routes/                 # 路由模块：路由汇总
 │   │   └── index.ts            # 自动加载 generated 模块的路由
 │   │
 │   ├── app.ts                  # Express 应用配置
 │   └── server.ts               # 服务器入口
 │
 ├── public/                     # 前端静态文件
-│   └── admin/                  # 【后台管理】管理界面
+│   └── admin/                  # 后台管理：管理界面
 │       ├── index.html          # 入口文件
 │       ├── style.css           # 全局样式
 │       ├── app.js              # 路由管理
 │       ├── components/         # 可复用组件（Modal、Toast）
-│       └── pages/              # 页面文件（Dashboard、Data、Interfaces 等）
+│       └── pages/              # 页面文件
 │
-├── scripts/                    # 【脚本模块】数据库初始化脚本
+├── scripts/                    # 脚本模块：数据库初始化脚本
 │   ├── db-init.sql             # 数据库初始化 SQL
 │   └── db-init.ts              # 数据库初始化脚本
 │
 ├── .cursor/                    # Cursor AI 规则
 │   └── rules/                  # AI 规则文件
-│       ├── ai-rules.mdc            # 主规则（索引、工作流程）
+│       ├── ai-rules.mdc            # 主规则
 │       ├── api-generation.mdc      # API 生成规则
 │       ├── ui-guidelines.mdc       # UI 设计规范
 │       ├── backend-admin-context.mdc # 后台管理上下文
 │       └── project-context.mdc     # 项目整体上下文（本文件）
 │
-├── .env                        # 环境变量（数据库配置等）
+├── .env                        # 环境变量
 ├── package.json                # 项目依赖
 ├── tsconfig.json               # TypeScript 配置
 └── README.md                   # 项目说明
@@ -118,7 +111,7 @@ alwaysApply: false
 ### 1. 核心模块 (`src/core/`)
 
 #### BaseModel.ts
-**作用**：数据模型基类，封装常用 CRUD 操作
+数据模型基类，封装常用 CRUD 操作
 
 **提供的方法**：
 - `findAll(conditions)` - 查询所有记录
@@ -131,12 +124,10 @@ alwaysApply: false
 - `rawQuery(sql, params)` - 原始 SQL 查询
 - `rawQueryOne(sql, params)` - 原始 SQL 查询（单条）
 
-**使用场景**：所有生成的模块的 `model.ts` 都继承此类
-
 ---
 
 #### Response.ts
-**作用**：统一响应格式封装，支持多种响应格式
+统一响应格式封装，支持多种响应格式
 
 **支持的格式**：
 - **B2B**：`{ success, code, message, data }`（小写字段）
@@ -157,7 +148,7 @@ alwaysApply: false
 ---
 
 #### ErrorHandler.ts
-**作用**：全局错误处理中间件
+全局错误处理中间件
 
 **功能**：
 - 捕获所有未处理的异常
@@ -169,7 +160,7 @@ alwaysApply: false
 ### 2. 配置模块 (`src/config/`)
 
 #### database.ts
-**作用**：MySQL 数据库连接池
+MySQL 数据库连接池
 
 **导出**：
 - `db.query(sql, params)` - 执行 SQL 查询
@@ -179,37 +170,10 @@ alwaysApply: false
 
 ---
 
-#### cors.ts
-**作用**：CORS 跨域配置
-
-**配置**：允许所有来源（开发环境）
-
----
-
-#### upload.ts
-**作用**：文件上传配置（Multer）
-
-**功能**：暂时保留，未使用
-
----
-
 ### 3. 中间件模块 (`src/middlewares/`)
 
-#### requestLogger.ts
-**作用**：记录所有请求日志
-
-**记录内容**：
-- 请求时间
-- 请求方法
-- 请求路径
-- 客户端 IP
-- 响应状态码
-- 响应时间
-
----
-
 #### interfaceControl.ts
-**作用**：接口控制中间件（最核心的中间件）
+接口控制中间件（最核心的中间件）
 
 **功能**：
 1. 检查接口是否被禁用
@@ -217,45 +181,23 @@ alwaysApply: false
 
 **配置存储**：内存中（`interfaceConfigs` Map）
 
-**后台管理调用**：通过 `/api/_admin/interfaces/:id` 修改配置
-
----
-
-#### delay.ts / mockError.ts
-**作用**：延迟模拟和错误模拟中间件
-
-**功能**：`interfaceControl.ts` 已包含这些功能，这两个文件已废弃
-
 ---
 
 ### 4. 工具模块 (`src/utils/`)
 
 #### faker.ts
-**作用**：智能数据生成工具
+智能数据生成工具
 
 **核心功能**：
 - 根据表结构自动生成测试数据
 - 智能识别字段类型（名称、邮箱、电话、价格等）
 - 生成符合约束的数据（唯一值、枚举值、范围限制）
 
-**使用场景**：
-- 后台管理的"生成测试数据"功能
-- 模块初始化脚本
-
----
-
-#### logger.ts
-**作用**：日志工具（Winston）
-
-**功能**：
-- 请求日志记录到文件
-- 错误日志记录
-
 ---
 
 ### 5. 系统模块 (`src/system/admin/`)
 
-**作用**：提供后台管理所需的所有 API
+提供后台管理所需的所有 API
 
 **包含的 API**：
 - 模块管理（查看、删除模块）
@@ -263,27 +205,27 @@ alwaysApply: false
 - 数据管理（查看、编辑、新增、删除表数据）
 - 场景管理（CRUD 场景）
 
-**详细说明**：见 `backend-admin-context.mdc`
+详细说明见 `backend-admin-context.mdc`
 
 ---
 
 ### 6. 生成模块 (`src/generated/`)
 
-**作用**：存放 AI 生成的接口模块
+存放 AI 生成的接口模块
 
 **特点**：
 - 完全解耦：每个模块独立，删除文件夹不影响其他模块
 - 自包含：每个模块包含完整的 Model、Controller、Routes
 - 可追溯：每个模块有 `.prompt.md` 记录业务逻辑
 
-**生成规则**：见 `api-generation.mdc`
+生成规则见 `api-generation.mdc`
 
 ---
 
 ### 7. 路由模块 (`src/routes/`)
 
 #### index.ts
-**作用**：自动加载所有生成的模块路由
+自动加载所有生成的模块路由
 
 **工作原理**：
 1. 扫描 `src/generated/` 目录
@@ -298,7 +240,7 @@ alwaysApply: false
 
 ### 8. 后台管理 (`public/admin/`)
 
-**作用**：提供可视化的管理界面
+提供可视化的管理界面
 
 **核心页面**：
 - Dashboard - 概览
@@ -308,13 +250,13 @@ alwaysApply: false
 - Interface Testing - 接口测试
 - Help - 使用说明
 
-**详细说明**：见 `backend-admin-context.mdc`
+详细说明见 `backend-admin-context.mdc`
 
 ---
 
 ## 🔄 数据流
 
-### 1. 请求处理流程
+### 请求处理流程
 ```
 客户端请求
   ↓
@@ -335,23 +277,6 @@ MySQL 数据库
 Response (src/core/Response.ts)
   ↓
 返回客户端
-```
-
-### 2. 模块生成流程
-```
-用户提供接口文档
-  ↓
-AI 读取 api-generation.mdc
-  ↓
-AI 生成模块文件到 src/generated/[模块名]/
-  ↓
-用户运行 init-db.ts 创建数据库表
-  ↓
-自动加载路由 (src/routes/index.ts)
-  ↓
-后台管理自动识别模块 (module.config.ts)
-  ↓
-用户在后台管理页面测试接口
 ```
 
 ---
@@ -389,24 +314,8 @@ AI 生成模块文件到 src/generated/[模块名]/
 - 更新对应模块的"作用"和"功能"描述
 - 如果影响数据流，更新"数据流"章节
 
-#### 3. 删除模块
-- 从所有章节中删除相关说明
-
-#### 4. 技术栈变更
+#### 3. 技术栈变更
 - 更新"技术栈"章节
-
-### 收集示例
-
-**示例 1**：
-- 用户说："添加 Redis 缓存支持"
-- AI 识别：这是新增核心模块
-- AI 更新：在"配置模块"章节添加 `redis.ts` 说明
-- AI 更新：在"技术栈"章节添加 Redis
-
-**示例 2**：
-- 用户说："将中间件 delay.ts 合并到 interfaceControl.ts"
-- AI 识别：这是模块整合
-- AI 更新：在"中间件模块"章节标记 `delay.ts` 为已废弃
 
 ---
 
@@ -437,4 +346,4 @@ AI 生成模块文件到 src/generated/[模块名]/
 **最后提醒**：
 - 本文件是项目的"鸟瞰图"
 - 任何架构级别的变更都必须同步更新本文件
-- 详细的技术规范在其他专项规则文件中（`api-generation.mdc`、`ui-guidelines.mdc`）
+- 详细的技术规范在其他专项规则文件中

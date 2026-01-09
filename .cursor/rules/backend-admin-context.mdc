@@ -4,11 +4,9 @@ alwaysApply: false
 
 # 后台管理系统上下文
 
-> **本文件用途**：记录后台管理系统的功能、页面、组件，帮助 AI 快速理解后台系统的能力。
+> **用途**：记录后台管理系统的功能、页面、组件，帮助 AI 快速理解后台系统的能力。
 > 
 > **触发时机**：修改后台管理功能、添加新页面、调试后台问题时。
-> 
-> **更新时机**：每当后台功能有变更（新增/删除/修改）时，必须同步更新本文件。
 
 ---
 
@@ -32,7 +30,7 @@ alwaysApply: false
 6. **使用说明**：项目使用文档
 
 **重要原则**：
-- ✅ **后台管理功能不能受影响**（最高优先级）
+- ✅ 后台管理功能不能受影响（最高优先级）
 - ✅ 生成的接口必须能在后台正常显示和使用
 - ✅ 如果后台功能异常，说明生成的代码或配置有问题
 
@@ -42,14 +40,12 @@ alwaysApply: false
 
 ```
 public/admin/
-├── index.html              # 入口文件，包含布局和路由
+├── index.html              # 入口文件
 ├── style.css               # 全局样式
 ├── app.js                  # 路由管理、导航切换
 ├── components/             # 可复用组件
 │   ├── modal.js            # 模态框组件
-│   ├── toast.js            # 提示消息组件
-│   ├── table.js            # 表格组件（已废弃，改用直接生成 HTML）
-│   └── form.js             # 表单组件（已废弃）
+│   └── toast.js            # 提示消息组件
 └── pages/                  # 页面文件
     ├── dashboard.js        # 概览页
     ├── data.js             # 数据管理（表格列表）
@@ -79,13 +75,13 @@ window.modal.open({
   confirmText: '确定',      // null 时隐藏 footer
   cancelText: '取消',
   onConfirm: () => {},
-  onOpen: () => {}          // 打开时回调
+  onOpen: () => {}
 });
 
 // 关闭模态框
 window.modal.close();
 
-// 更新模态框内容（不关闭模态框）
+// 更新模态框内容
 window.modal.updateContent('<div>新内容</div>');
 
 // 表单模态框
@@ -97,12 +93,6 @@ window.modal.form({
   onSubmit: (formData) => {}
 });
 ```
-
-**特性**：
-- 支持动态内容更新
-- 支持自定义尺寸
-- 支持表单验证
-- 滚动限制在模态框内部
 
 ---
 
@@ -118,11 +108,6 @@ window.toast.error('操作失败');
 window.toast.warning('请注意');
 window.toast.info('提示信息');
 ```
-
-**特性**：
-- 自动消失（3秒）
-- 支持多个 Toast 堆叠
-- 图标区分类型
 
 ---
 
@@ -154,11 +139,6 @@ const response = await api.testRequest({
 });
 ```
 
-**特性**：
-- 自动处理 JSON
-- 自动显示错误 Toast
-- 支持自定义 headers
-
 ---
 
 ### 4. Router（路由管理）
@@ -186,9 +166,7 @@ const response = await api.testRequest({
 ### 1. 概览页 (Dashboard)
 **文件**：`public/admin/pages/dashboard.js`
 
-**功能**：
-- 显示项目统计信息（模块数、接口数、数据表数）
-- 显示快速操作卡片
+**功能**：显示项目统计信息和快速操作卡片
 
 **数据来源**：
 - `/api/_admin/modules` - 模块列表
@@ -198,35 +176,20 @@ const response = await api.testRequest({
 ---
 
 ### 2. 数据管理 (Data Management)
-**文件**：
-- `public/admin/pages/data.js` - 表格列表
-- `public/admin/pages/data-detail.js` - 表格详情
+**文件**：`public/admin/pages/data.js`、`public/admin/pages/data-detail.js`
 
-#### 数据管理 - 表格列表
-**功能**：
+#### 表格列表
 - 显示所有数据表（基于 `module.config.ts` 中的 `tables`）
 - 支持模块筛选
 - 点击"查看数据"跳转到表格详情页
 
-**数据来源**：
-- `/api/_admin/tables` - 获取所有数据表及记录数
-
-#### 数据管理 - 表格详情
-**功能**：
+#### 表格详情
 - 查看表格数据（分页显示）
 - 搜索数据（选择字段 + 输入值）
 - 编辑数据（点击单元格直接编辑）
 - 新增数据（表单 + 一键填充）
 - 删除数据（单个/批量/清空）
 - 生成测试数据
-- 清空数据
-
-**数据来源**：
-- `/api/_admin/tables/:tableName` - 获取表数据
-- `/api/_admin/tables/:tableName/row` - 新增行
-- `/api/_admin/tables/:tableName/row/:id` - 更新/删除行
-- `/api/_admin/tables/:tableName/generate` - 生成测试数据
-- `/api/_admin/tables/:tableName/clear` - 清空数据
 
 ---
 
@@ -238,12 +201,8 @@ const response = await api.testRequest({
 - 支持筛选（模块、名称、URL、方法、状态）
 - 启用/禁用接口
 - 设置接口场景
-- 快速测试接口（打开测试模态框）
+- 快速测试接口
 - 批量设置场景
-
-**数据来源**：
-- `/api/_admin/interfaces` - 获取接口列表
-- `/api/_admin/interfaces/:id` - 更新接口（启用/禁用、设置场景）
 
 ---
 
@@ -256,7 +215,6 @@ const response = await api.testRequest({
 - 编辑场景
 - 删除场景（预设场景不可删除）
 - 启用/禁用场景
-- 场景搜索
 
 **预设场景**：
 1. 理想环境（无延迟、无错误）
@@ -264,11 +222,6 @@ const response = await api.testRequest({
 3. 网络不稳定（10% 错误率）
 4. 高延迟（5-10秒）
 5. 服务器压力（20% 错误率）
-
-**数据来源**：
-- `/api/_admin/scenarios` - 获取场景列表
-- `/api/_admin/scenarios` (POST) - 创建场景
-- `/api/_admin/scenarios/:id` - 更新/删除场景
 
 ---
 
@@ -285,10 +238,6 @@ const response = await api.testRequest({
 - 复制响应内容
 - 路径参数提示（检测 `:param` 并提示用户修改）
 
-**数据来源**：
-- `/api/_admin/interfaces` - 获取接口列表（用于 URL 下拉）
-- 直接调用用户选择的接口
-
 ---
 
 ### 6. 使用说明 (Help)
@@ -302,8 +251,7 @@ const response = await api.testRequest({
 - 场景说明
 - FAQ
 
-**更新时机**：
-- 任何功能变更时，必须同步更新本页面
+**更新时机**：任何功能变更时，必须同步更新本页面
 
 ---
 
@@ -311,21 +259,15 @@ const response = await api.testRequest({
 
 所有后台管理 API 都在 `src/system/admin/` 目录下：
 
-### 模块管理 API
-**位置**：`src/system/admin/modules.ts`
-
+### 模块管理 API (`src/system/admin/modules.ts`)
 - `GET /api/_admin/modules` - 获取模块列表
 - `DELETE /api/_admin/modules/:name` - 删除模块
 
-### 接口管理 API
-**位置**：`src/system/admin/interfaces.ts`
-
+### 接口管理 API (`src/system/admin/interfaces.ts`)
 - `GET /api/_admin/interfaces` - 获取接口列表
 - `PUT /api/_admin/interfaces/:id` - 更新接口（启用/禁用、设置场景）
 
-### 数据管理 API
-**位置**：`src/system/admin/tables.ts`
-
+### 数据管理 API (`src/system/admin/tables.ts`)
 - `GET /api/_admin/tables` - 获取数据表列表
 - `GET /api/_admin/tables/:tableName` - 获取表数据（支持搜索、分页）
 - `POST /api/_admin/tables/:tableName/row` - 新增行
@@ -335,47 +277,11 @@ const response = await api.testRequest({
 - `POST /api/_admin/tables/:tableName/generate` - 生成测试数据
 - `POST /api/_admin/tables/:tableName/clear` - 清空数据
 
-### 场景管理 API
-**位置**：`src/system/admin/scenarios.ts`
-
+### 场景管理 API (`src/system/admin/scenarios.ts`)
 - `GET /api/_admin/scenarios` - 获取场景列表
 - `POST /api/_admin/scenarios` - 创建场景
 - `PUT /api/_admin/scenarios/:id` - 更新场景
 - `DELETE /api/_admin/scenarios/:id` - 删除场景
-
----
-
-## 🔄 自动收集机制
-
-### 当后台功能有变更时，必须更新本文件
-
-#### 1. 新增页面
-- 在"文件结构"章节添加新页面文件
-- 在"页面详解"章节添加新页面说明
-- 在"路由管理"章节添加新路由
-
-#### 2. 修改现有功能
-- 更新对应页面的"功能"描述
-- 更新"数据来源"（如果 API 有变化）
-
-#### 3. 删除功能
-- 从所有章节中删除相关说明
-
-#### 4. 新增/修改 API
-- 在"后台管理依赖的 API"章节更新
-
-### 收集示例
-
-**示例 1**：
-- 用户说："添加一个模块编辑功能"
-- AI 识别：这是新增功能
-- AI 更新：在"模块管理 API"章节添加 `PUT /api/_admin/modules/:name`
-- AI 更新：在"模块管理"页面说明中添加"编辑模块"功能描述
-
-**示例 2**：
-- 用户说："删除日志管理功能"
-- AI 识别：这是删除功能
-- AI 更新：从所有章节中删除日志相关内容
 
 ---
 
@@ -395,6 +301,24 @@ const response = await api.testRequest({
 - 所有 CRUD 操作必须有对应的 API
 - 错误处理必须友好（Toast 提示）
 - 加载状态必须明确（loading 提示）
+
+---
+
+## 🔄 自动收集机制
+
+### 当后台功能有变更时，必须更新本文件
+
+#### 1. 新增页面
+- 在"文件结构"章节添加新页面文件
+- 在"页面详解"章节添加新页面说明
+- 在"路由管理"章节添加新路由
+
+#### 2. 修改现有功能
+- 更新对应页面的"功能"描述
+- 更新"数据来源"（如果 API 有变化）
+
+#### 3. 新增/修改 API
+- 在"后台管理依赖的 API"章节更新
 
 ---
 

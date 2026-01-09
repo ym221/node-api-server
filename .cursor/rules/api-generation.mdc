@@ -4,56 +4,46 @@ alwaysApply: false
 
 # API 接口生成规则
 
-> **本文件用途**：当用户提供接口文档/需求文档，要求生成 API 接口时，AI 应参考本规则。
+> **用途**：用户提供接口文档/需求文档（或只是一句话如"生成订单管理"），要求生成 API 接口时，AI 参考本规则。
 > 
-> **触发时机**：用户提供接口文档、需求说明、数据库表结构等，要求生成接口模块。
+> **触发时机**：用户要求生成接口模块（完整文档或简单需求均可）。
 
 ---
 
 ## 🎯 核心原则
 
 ### 1. 后台管理兼容性（最高优先级）
-- ✅ **生成的接口必须能在后台管理页面正常使用**
-- ✅ 后台管理位置：`public/admin/`
-- ✅ 后台管理功能包括：
-  - 模块管理（查看、删除模块）
-  - 接口管理（查看接口列表、设置场景、测试接口）
-  - 数据管理（查看/编辑/新增/删除表数据、生成测试数据）
-  - 场景管理（模拟延迟、错误、超时等场景）
-- ✅ **如果生成的代码导致后台功能异常，说明实现有误**
+- ✅ 生成的接口必须能在后台管理页面正常使用（`public/admin/`）
+- ✅ 后台功能：模块管理、接口管理、数据管理、场景管理
+- ✅ 如果后台功能异常，说明实现有误
 
 ### 2. 模块级提示词机制
-- ✅ **每个模块必须包含 `.prompt.md` 文件**
-- ✅ 位置：`src/generated/[模块名]/.prompt.md`
-- ✅ 用途：记录该模块的业务逻辑、接口说明、特殊处理、已知问题
-- ✅ 模块的特殊调整应记录在模块级 `.prompt.md`，通用规则应更新到本文件
+- ✅ 每个模块必须包含 `.prompt.md` 文件（位置：`src/generated/[模块名]/.prompt.md`）
+- ✅ 记录：业务逻辑、接口说明、特殊处理、已知问题
+- ✅ 模块特殊调整记录在模块级 `.prompt.md`，通用规则更新到本文件
 
-### 3. 模板优先、保持同步（重要！）
-- ✅ **当发现 bug 或进行功能变更时，优先分析是否为通用问题**
-- ✅ **如果是通用问题，必须更新本提示词文件，而不是只修复单个模块**
-- ✅ **修复单个模块后，立即检查本规则是否需要同步更新**
-- ✅ 避免"只修复 products 模块，不更新规则，导致新生成的模块还有同样 bug"的问题
+### 3. 规则优先、保持同步
+- ✅ 发现 bug/功能变更时，优先分析是否为通用问题
+- ✅ 如果是通用问题，必须更新本规则，而不是只修复单个模块
+- ✅ 修复后，立即检查本规则是否需要同步更新
 
 ---
 
 ## 📁 生成的文件夹结构
 
-### 标准结构（必需文件）
+### 必需文件
 ```
 src/generated/[模块名]/
-├── .prompt.md          # 【必需】模块级提示词，记录业务逻辑、接口说明
-├── module.config.ts    # 【必需】模块配置，声明模块信息、数据表、接口列表
-├── types.ts            # 【必需】TypeScript 类型定义
-├── model.ts            # 【必需】数据模型，基于 BaseModel
-├── controller.ts       # 【必需】控制器，处理请求逻辑
-├── routes.ts           # 【必需】路由配置
-├── schema.sql          # 【必需】数据库表结构 SQL
-└── init-db.ts          # 【可选】数据库初始化脚本（创建表+插入测试数据）
+├── .prompt.md          # 模块级提示词，记录业务逻辑
+├── module.config.ts    # 模块配置（模块信息、数据表、接口列表）
+├── types.ts            # TypeScript 类型定义
+├── model.ts            # 数据模型（基于 BaseModel）
+├── controller.ts       # 控制器（处理请求）
+├── routes.ts           # 路由配置
+├── schema.sql          # 数据库表结构 SQL
+├── init-db.ts          # 数据库初始化（创建表+测试数据）
+└── verify.ts           # 验证脚本（自动验证可用性）
 ```
-
-### 可选文件
-- `README.md` - 模块使用说明（如果文档复杂可生成）
-- `test-api.sh` / `test-api.ps1` - API 测试脚本（如果需要）
 
 ---
 
@@ -61,7 +51,7 @@ src/generated/[模块名]/
 
 ### 1️⃣ `.prompt.md` - 模块级提示词
 
-**模板内容**：
+**模板**：
 ```markdown
 # [模块名称]
 
@@ -102,27 +92,17 @@ src/generated/[模块名]/
 **必须包含的字段**：
 ```typescript
 export const moduleConfig = {
-  // 模块名称（英文，用于路由）
-  name: 'example',
+  name: 'example',                     // 模块名称（英文，用于路由）
+  description: '示例模块',              // 模块描述（中文，用于后台展示）
+  responseFormat: 'B2B' as const,      // 响应格式：'B2B' | 'ERP' | 'Ebooking'
   
-  // 模块描述（中文，用于后台管理展示）
-  description: '示例模块',
+  tables: ['example_table'],           // 数据表列表
   
-  // 响应格式（必需！用于后台管理识别格式）
-  responseFormat: 'B2B' as const,  // 'B2B' | 'ERP' | 'Ebooking'
-  
-  // 数据表列表（必需！用于后台数据管理）
-  tables: [
-    'example_table',
-  ],
-  
-  // 数据表描述（必需！用于后台数据管理展示）
-  tableDescriptions: {
+  tableDescriptions: {                 // 表描述（用于后台数据管理）
     'example_table': '示例数据表 - 存储XXX数据',
   },
   
-  // 接口列表（必需！用于后台接口管理展示）
-  interfaces: [
+  interfaces: [                        // 接口列表（用于后台接口管理）
     { method: 'GET', path: '/api/example/list', description: '获取列表' },
     { method: 'GET', path: '/api/example/:id', description: '获取详情' },
     { method: 'POST', path: '/api/example', description: '创建记录' },
@@ -133,19 +113,16 @@ export const moduleConfig = {
 ```
 
 **关键点**：
-- ✅ `responseFormat` 决定响应格式，必须与 Controller 中的 `Res` 调用保持一致
-- ✅ `tables` 和 `tableDescriptions` 必须准确，后台数据管理依赖它们
-- ✅ `interfaces` 必须完整，后台接口管理依赖它们
+- ✅ `responseFormat` 决定响应格式，必须与 Controller 保持一致
+- ✅ `tables` 和 `tableDescriptions` 必须准确
+- ✅ `interfaces` 必须完整
 
 ---
 
 ### 3️⃣ `types.ts` - 类型定义
 
-**基础结构**：
 ```typescript
-/**
- * 数据实体（对应数据库表结构）
- */
+// 数据实体（对应数据库表结构）
 export interface ExampleItem {
   id: number;
   name: string;
@@ -154,40 +131,30 @@ export interface ExampleItem {
   sort_order: number;
   created_at: Date;
   updated_at: Date;
-  // ... 其他业务字段
 }
 
-/**
- * 列表查询参数
- */
+// 列表查询参数
 export interface ExampleListQuery {
   page?: number;
   pageSize?: number;
   status?: number;
   keyword?: string;
-  // ... 其他筛选字段
 }
 
-/**
- * 创建 DTO
- */
+// 创建 DTO
 export interface ExampleCreateDto {
   name: string;
   description?: string;
   status?: number;
   sort_order?: number;
-  // ... 其他可创建字段
 }
 
-/**
- * 更新 DTO
- */
+// 更新 DTO（所有字段都是可选）
 export interface ExampleUpdateDto {
   name?: string;
   description?: string;
   status?: number;
   sort_order?: number;
-  // ... 其他可更新字段（所有字段都是可选）
 }
 ```
 
@@ -195,7 +162,6 @@ export interface ExampleUpdateDto {
 
 ### 4️⃣ `model.ts` - 数据模型
 
-**基础结构**：
 ```typescript
 import { BaseModel } from '../../core/BaseModel';
 import { ExampleItem, ExampleListQuery } from './types';
@@ -214,19 +180,16 @@ export class ExampleModel extends BaseModel<ExampleItem> {
     let whereClauses: string[] = [];
     let params: any[] = [];
 
-    // 状态筛选
     if (status !== undefined) {
       whereClauses.push('status = ?');
       params.push(status);
     }
 
-    // 关键词搜索
     if (keyword) {
       whereClauses.push('(name LIKE ? OR description LIKE ?)');
       params.push(`%${keyword}%`, `%${keyword}%`);
     }
 
-    // 构建 WHERE 子句
     const whereClause = whereClauses.length > 0 
       ? ` WHERE ${whereClauses.join(' AND ')}` 
       : '';
@@ -243,8 +206,7 @@ export class ExampleModel extends BaseModel<ExampleItem> {
     const limit = Math.min(pageSize, 100);
     const offset = (page - 1) * limit;
     
-    // ⚠️ 重要：LIMIT 和 OFFSET 必须直接拼接到 SQL 中，不能用 ? 占位符
-    // 原因：MySQL 的预处理语句不支持 LIMIT/OFFSET 使用占位符
+    // ⚠️ 重要：LIMIT 和 OFFSET 必须直接拼接，不能用 ? 占位符
     const dataSql = `SELECT * FROM ${this.tableName}${whereClause} ORDER BY sort_order DESC, id DESC LIMIT ${limit} OFFSET ${offset}`;
     
     const list = await this.rawQuery<ExampleItem>(
@@ -252,27 +214,20 @@ export class ExampleModel extends BaseModel<ExampleItem> {
       params.length > 0 ? params : undefined
     );
 
-    return {
-      list,
-      total,
-      page,
-      pageSize: limit,
-    };
+    return { list, total, page, pageSize: limit };
   }
 }
 ```
 
-**关键注意事项**：
+**关键点**：
 - ✅ **LIMIT 和 OFFSET 必须直接拼接**，不能用 `?` 占位符
-- ✅ **params 为空数组时，传 `undefined` 而不是空数组**
+- ✅ **params 为空数组时，传 `undefined`**
 - ✅ 继承自 `BaseModel`，可使用 `findById`, `create`, `update`, `delete` 等方法
-- ✅ 如果有复杂业务逻辑，可添加自定义方法（如 `updateStock`, `batchDelete` 等）
 
 ---
 
 ### 5️⃣ `controller.ts` - 控制器
 
-**基础结构（CRUD 示例）**：
 ```typescript
 import { Request, Response } from 'express';
 import { Res } from '../../core/Response';
@@ -282,9 +237,7 @@ import { moduleConfig } from './module.config';
 
 const model = new ExampleModel();
 
-/**
- * 获取列表
- */
+// 获取列表
 export async function getList(req: Request, res: Response) {
   try {
     const query: ExampleListQuery = {
@@ -296,14 +249,13 @@ export async function getList(req: Request, res: Response) {
 
     const result = await model.findList(query);
 
-    // ✅ 使用 Res.paginated 返回分页数据
     return Res.paginated(
       res,
       result.list,
       result.total,
       result.page,
       result.pageSize,
-      moduleConfig.responseFormat  // ⚠️ 必须使用 moduleConfig.responseFormat
+      moduleConfig.responseFormat
     );
   } catch (error) {
     console.error('获取列表失败:', error);
@@ -311,9 +263,7 @@ export async function getList(req: Request, res: Response) {
   }
 }
 
-/**
- * 获取详情
- */
+// 获取详情
 export async function getDetail(req: Request, res: Response) {
   try {
     const { id } = req.params;
@@ -330,19 +280,15 @@ export async function getDetail(req: Request, res: Response) {
   }
 }
 
-/**
- * 创建记录
- */
+// 创建记录
 export async function create(req: Request, res: Response) {
   try {
     const data: ExampleCreateDto = req.body;
 
-    // 数据验证
     if (!data.name) {
       return Res.badRequest(res, '名称不能为空');
     }
 
-    // 创建记录
     const id = await model.create({
       ...data,
       status: data.status ?? 1,
@@ -356,21 +302,17 @@ export async function create(req: Request, res: Response) {
   }
 }
 
-/**
- * 更新记录
- */
+// 更新记录
 export async function update(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const data: ExampleUpdateDto = req.body;
 
-    // 检查记录是否存在
     const exists = await model.exists({ id: parseInt(id) } as any);
     if (!exists) {
       return Res.notFound(res, '记录不存在');
     }
 
-    // 更新记录
     await model.update(parseInt(id), data);
 
     return Res.success(res, null, moduleConfig.responseFormat, '更新成功');
@@ -380,20 +322,16 @@ export async function update(req: Request, res: Response) {
   }
 }
 
-/**
- * 删除记录
- */
+// 删除记录
 export async function deleteItem(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    // 检查记录是否存在
     const exists = await model.exists({ id: parseInt(id) } as any);
     if (!exists) {
       return Res.notFound(res, '记录不存在');
     }
 
-    // 删除记录
     await model.delete(parseInt(id));
 
     return Res.success(res, null, moduleConfig.responseFormat, '删除成功');
@@ -404,18 +342,15 @@ export async function deleteItem(req: Request, res: Response) {
 }
 ```
 
-**关键注意事项**：
-- ✅ **所有响应必须使用 `moduleConfig.responseFormat`**
-- ✅ 使用 `Res.success()` 返回单个数据
-- ✅ 使用 `Res.paginated()` 返回分页数据
-- ✅ 使用 `Res.badRequest()`, `Res.notFound()`, `Res.serverError()` 返回错误
-- ✅ **ID 参数记得 `parseInt(id)`**，因为 Express 路由参数是字符串
+**关键点**：
+- ✅ 所有响应必须使用 `moduleConfig.responseFormat`
+- ✅ ID 参数记得 `parseInt(id)`
+- ✅ 使用 `Res.success()` / `Res.paginated()` / `Res.badRequest()` / `Res.notFound()` / `Res.serverError()`
 
 ---
 
 ### 6️⃣ `routes.ts` - 路由配置
 
-**基础结构**：
 ```typescript
 import { Router } from 'express';
 import { asyncHandler } from '../../core/ErrorHandler';
@@ -423,36 +358,24 @@ import * as controller from './controller';
 
 const router = Router();
 
-// 列表
 router.get('/example/list', asyncHandler(controller.getList));
-
-// 详情
 router.get('/example/:id', asyncHandler(controller.getDetail));
-
-// 创建
 router.post('/example', asyncHandler(controller.create));
-
-// 更新
 router.put('/example/:id', asyncHandler(controller.update));
-
-// 删除
 router.delete('/example/:id', asyncHandler(controller.deleteItem));
 
 export default router;
 ```
 
-**关键注意事项**：
+**关键点**：
 - ✅ 所有异步 controller 必须用 `asyncHandler` 包裹
 - ✅ 路由路径应与 `module.config.ts` 中的 `interfaces` 保持一致
-- ✅ RESTful 风格：列表用 `/list`，详情/更新/删除用 `/:id`
 
 ---
 
 ### 7️⃣ `schema.sql` - 数据库表结构
 
-**基础结构**：
 ```sql
--- 示例表结构
 -- 该文件包含模块所需的所有数据表创建语句
 
 CREATE TABLE IF NOT EXISTS `example_table` (
@@ -470,18 +393,16 @@ CREATE TABLE IF NOT EXISTS `example_table` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='示例表';
 ```
 
-**关键注意事项**：
-- ✅ 使用 `CREATE TABLE IF NOT EXISTS` 避免重复创建
+**关键点**：
+- ✅ 使用 `CREATE TABLE IF NOT EXISTS`
 - ✅ 所有字段必须有 `COMMENT` 注释
 - ✅ 必须包含 `id`, `created_at`, `updated_at` 基础字段
-- ✅ 根据查询需求添加合适的索引
-- ✅ 表名、字段名与 `types.ts` 保持一致
+- ✅ 根据查询需求添加索引
 
 ---
 
-### 8️⃣ `init-db.ts` - 数据库初始化脚本（可选）
+### 8️⃣ `init-db.ts` - 数据库初始化脚本
 
-**基础结构**：
 ```typescript
 import fs from 'fs';
 import path from 'path';
@@ -491,18 +412,16 @@ async function initDatabase() {
   try {
     console.log('开始初始化[模块名]数据库...');
 
-    // ⚠️ 重要：使用 process.cwd() 而不是 __dirname，因为 tsx 运行时路径不同
+    // ⚠️ 使用 process.cwd() 而不是 __dirname
     const schemaPath = path.join(process.cwd(), 'src/generated/[模块名]/schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
     
-    // ⚠️ 重要：先按行过滤注释，再分割 SQL 语句
-    // 原因：直接 filter 会导致多行 SQL 语句被错误过滤
+    // 先按行过滤注释，再分割 SQL 语句
     const sqlWithoutComments = schemaSql
       .split('\n')
       .filter(line => !line.trim().startsWith('--'))
       .join('\n');
     
-    // 分割 SQL 语句（按分号分割）
     const statements = sqlWithoutComments
       .split(';')
       .map(s => s.trim())
@@ -511,16 +430,16 @@ async function initDatabase() {
     console.log(`找到 ${statements.length} 条 SQL 语句`);
     
     for (let i = 0; i < statements.length; i++) {
-      const statement = statements[i];
       console.log(`执行第 ${i + 1} 条 SQL...`);
-      await execute(statement);
+      await execute(statements[i]);
     }
 
     console.log('✅ 数据表创建成功');
 
-    // 插入测试数据（如果需要）
+    // 插入测试数据
     console.log('正在插入测试数据...');
-    // ... 使用 insert() 函数插入测试数据 ...
+    // 使用 insert() 函数插入测试数据
+    // 确保插入足够的测试数据，供验证脚本使用
 
     console.log('🎉 [模块名]初始化完成！');
     process.exit(0);
@@ -533,31 +452,257 @@ async function initDatabase() {
 initDatabase();
 ```
 
-**关键注意事项**：
-- ✅ **必须使用 `execute` 和 `insert` 函数**，不是 `db.query`
-- ✅ **使用 `process.cwd()` 获取工作目录**，不要用 `__dirname`
-- ✅ **SQL 注释过滤**：先按行过滤 `--` 注释，再分割 SQL 语句
-- ✅ **添加执行日志**：便于调试，显示执行进度
+**关键点**：
+- ✅ 必须使用 `execute` 和 `insert` 函数，不是 `db.query`
+- ✅ 使用 `process.cwd()` 获取工作目录，不要用 `__dirname`
+- ✅ 必须插入足够的测试数据，确保验证脚本能够使用
+- ✅ 运行方式：`npx tsx src/generated/[模块名]/init-db.ts`
 
-**用途**：
-- 首次创建表结构
-- 插入测试数据
-- 运行方式：`npx tsx src/generated/[模块名]/init-db.ts`
+---
+
+### 9️⃣ `verify.ts` - 验证脚本
+
+**用途**：自动验证生成的接口和后台管理功能是否可用
+
+**核心原则**：
+- ✅ 验证目的是确认"代码能否执行"，而不是测试复杂度
+- ✅ 只验证 1 个接口 + 1 个后台功能
+- ✅ 如果验证失败，说明规则有问题，需要优化规则
+
+```typescript
+import axios from 'axios';
+import { moduleConfig } from './module.config';
+
+const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8090';
+
+/**
+ * 智能选择要验证的接口
+ * 优先选择可以独立执行的接口
+ */
+function selectInterfaceToVerify() {
+  const interfaces = moduleConfig.interfaces;
+  
+  // 1. 优先选择列表接口（最安全，即使没数据也能返回空列表）
+  let target = interfaces.find(i => 
+    i.method === 'GET' && 
+    (i.path.includes('/list') || i.description.includes('列表'))
+  );
+  
+  // 2. 其次选择创建接口（可以独立执行，不依赖现有数据）
+  if (!target) {
+    target = interfaces.find(i => 
+      i.method === 'POST' && 
+      (i.path.includes('/create') || i.description.includes('创建') || i.description.includes('新增'))
+    );
+  }
+  
+  // 3. 选择不带路径参数的 GET 接口
+  if (!target) {
+    target = interfaces.find(i => 
+      i.method === 'GET' && 
+      !i.path.includes(':')
+    );
+  }
+  
+  // 4. 选择不带路径参数的 POST 接口
+  if (!target) {
+    target = interfaces.find(i => 
+      i.method === 'POST' && 
+      !i.path.includes(':')
+    );
+  }
+  
+  // 5. 最后选择第一个接口（可能需要依赖 init-db.ts 的测试数据）
+  if (!target) {
+    target = interfaces[0];
+  }
+  
+  return target;
+}
+
+/**
+ * 构建完整 URL
+ */
+function buildUrl(path: string): string {
+  return `${BASE_URL}${path}`;
+}
+
+/**
+ * 根据接口信息生成测试数据
+ * ⚠️ AI 在生成时应该根据实际的接口需求填充此函数
+ */
+function generateTestData(interfaceInfo: any): any {
+  // 根据模块类型返回对应的测试数据
+  // ⚠️ AI 生成时必须根据实际接口需求填充
+  return {};
+}
+
+/**
+ * 验证接口
+ */
+async function verifyInterface(interfaceInfo: any): Promise<boolean> {
+  try {
+    console.log(`   路径: ${interfaceInfo.method} ${interfaceInfo.path}`);
+    console.log(`   描述: ${interfaceInfo.description}`);
+    
+    let response;
+    const url = buildUrl(interfaceInfo.path);
+    
+    if (interfaceInfo.method === 'GET') {
+      if (interfaceInfo.path.includes(':id')) {
+        const testUrl = url.replace(':id', '1');
+        response = await axios.get(testUrl);
+      } else {
+        response = await axios.get(url);
+      }
+      
+    } else if (interfaceInfo.method === 'POST') {
+      const testData = generateTestData(interfaceInfo);
+      response = await axios.post(url, testData);
+      
+    } else if (interfaceInfo.method === 'PUT') {
+      const testData = generateTestData(interfaceInfo);
+      if (interfaceInfo.path.includes(':id')) {
+        const testUrl = url.replace(':id', '1');
+        response = await axios.put(testUrl, testData);
+      } else {
+        response = await axios.put(url, testData);
+      }
+      
+    } else if (interfaceInfo.method === 'DELETE') {
+      if (interfaceInfo.path.includes(':id')) {
+        const testUrl = url.replace(':id', '1');
+        response = await axios.delete(testUrl);
+      } else {
+        response = await axios.delete(url);
+      }
+    }
+    
+    // 验证响应格式
+    if (response && response.data) {
+      const hasValidFormat = 
+        (response.data.success !== undefined && response.data.code !== undefined) || // B2B/Ebooking
+        (response.data.Success !== undefined && response.data.Code !== undefined);   // ERP
+      
+      if (hasValidFormat) {
+        console.log('   ✅ 接口可以执行，响应格式正确');
+        return true;
+      } else {
+        console.log('   ❌ 接口响应格式错误');
+        console.log('   响应数据:', JSON.stringify(response.data, null, 2));
+        return false;
+      }
+    }
+    
+    return false;
+    
+  } catch (error: any) {
+    console.log('   ❌ 接口执行失败');
+    console.log('   错误信息:', error.response?.data?.message || error.message);
+    
+    if (error.response?.status === 404) {
+      console.log('   说明：路由未注册或路径错误');
+    } else if (error.response?.status === 500) {
+      console.log('   说明：服务器内部错误，可能是代码逻辑问题');
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * 验证后台管理集成
+ */
+async function verifyAdminIntegration(): Promise<boolean> {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/_admin/modules`);
+    const moduleExists = response.data.data?.some((m: any) => m.name === moduleConfig.name);
+    
+    if (moduleExists) {
+      console.log('   ✅ 模块已被后台识别');
+      return true;
+    } else {
+      console.log('   ❌ 模块未被识别');
+      console.log('   说明：module.config.ts 可能未正确导出或服务器未重启');
+      return false;
+    }
+    
+  } catch (error: any) {
+    console.log('   ❌ 无法访问后台管理接口');
+    console.log('   错误信息:', error.message);
+    return false;
+  }
+}
+
+/**
+ * 主验证函数
+ */
+async function verify() {
+  console.log('🔍 开始验证模块功能...\n');
+  console.log(`模块名称: ${moduleConfig.description} (${moduleConfig.name})`);
+  console.log(`接口数量: ${moduleConfig.interfaces.length} 个\n`);
+  
+  let allPassed = true;
+  
+  // 1. 验证接口
+  console.log('1️⃣ 验证接口功能...');
+  const targetInterface = selectInterfaceToVerify();
+  console.log(`   选择验证: ${targetInterface.description}`);
+  
+  const interfacePassed = await verifyInterface(targetInterface);
+  if (!interfacePassed) {
+    allPassed = false;
+    console.log('\n⚠️  接口验证失败，说明生成的代码有问题');
+    console.log('   建议：检查并优化规则，重新生成模块\n');
+  }
+  
+  // 2. 验证后台管理集成
+  console.log('\n2️⃣ 验证后台管理集成...');
+  const adminPassed = await verifyAdminIntegration();
+  if (!adminPassed) {
+    allPassed = false;
+  }
+  
+  // 3. 输出验证结果
+  console.log('\n' + '='.repeat(50));
+  if (allPassed) {
+    console.log('✅ 验证通过！模块可用。');
+    console.log('🎨 管理后台: http://localhost:8090/admin');
+    console.log('📝 模块文档: src/generated/' + moduleConfig.name + '/.prompt.md');
+  } else {
+    console.log('❌ 验证失败！请检查上述错误信息。');
+    console.log('⚠️  如果多个功能都失败，说明规则有问题，需要优化规则。');
+  }
+  console.log('='.repeat(50));
+  
+  process.exit(allPassed ? 0 : 1);
+}
+
+verify();
+```
+
+**关键点**：
+- ✅ 智能选择接口：优先选择可以独立执行的接口（列表、创建）
+- ✅ generateTestData 必须根据实际接口需求填充
+- ✅ 处理路径参数：如果接口需要 `:id`，使用测试数据（ID 通常为 1）
+- ✅ 响应格式兼容：支持 B2B/Ebooking 和 ERP 两种格式
+- ✅ 运行方式：`npx tsx src/generated/[模块名]/verify.ts`
+- ✅ **AI 在生成完所有文件后，必须自动运行此脚本**
 
 ---
 
 ## 🎨 响应格式规范
 
 ### 格式选择规则
-- ✅ **若文档中明确指定响应格式，严格按照文档执行**
-- ✅ **若文档未指定，默认使用 B2B 格式**
+- ✅ 若文档中明确指定响应格式，严格按照文档执行
+- ✅ 若文档未指定，默认使用 B2B 格式
 - ✅ 在 `module.config.ts` 中配置 `responseFormat`
 
 ### B2B 格式
 ```json
 {
   "success": true,
-  "code": 0,              // 0 表示成功，非 0 表示失败
+  "code": 0,
   "message": "操作成功",
   "data": {}
 }
@@ -583,7 +728,7 @@ initDatabase();
 ```json
 {
   "Success": true,
-  "Code": 0,              // 0 表示成功，非 0 表示失败
+  "Code": 0,
   "Message": "操作成功",
   "Data": {}
 }
@@ -615,7 +760,6 @@ initDatabase();
 ### BaseModel（数据模型基类）
 位置：`src/core/BaseModel.ts`
 
-**常用方法**：
 ```typescript
 // 根据 ID 查询
 const item = await model.findById(1);
@@ -643,7 +787,6 @@ const single = await model.rawQueryOne<T>('SELECT * FROM table WHERE id = ?', [1
 ### Res（响应封装）
 位置：`src/core/Response.ts`
 
-**常用方法**：
 ```typescript
 // 成功响应（单个数据）
 Res.success(res, data, 'B2B', '操作成功');
@@ -660,7 +803,6 @@ Res.serverError(res, '服务器错误');
 ### Faker（数据生成）
 位置：`src/utils/faker.ts`
 
-**使用示例**：
 ```typescript
 import { generateSmartData } from '../../utils/faker';
 
@@ -689,8 +831,6 @@ await model.rawQuery(sql, params.length > 0 ? params : undefined);
 ```
 
 ### 2. 空参数数组导致错误
-**错误现象**：查询失败或返回空结果
-
 **原因**：`rawQuery` 不接受空数组
 
 **正确写法**：
@@ -703,8 +843,6 @@ await model.rawQuery(sql, params.length > 0 ? params : undefined);
 ```
 
 ### 3. ID 参数类型错误
-**错误现象**：`id` 被当作字符串处理
-
 **原因**：Express 路由参数是字符串
 
 **正确写法**：
@@ -717,8 +855,6 @@ await model.findById(parseInt(req.params.id));
 ```
 
 ### 4. 响应格式不一致
-**错误现象**：后台管理页面显示异常
-
 **原因**：Controller 中的响应格式与 `module.config.ts` 不一致
 
 **正确写法**：
@@ -730,9 +866,10 @@ return Res.paginated(res, list, total, page, pageSize, moduleConfig.responseForm
 
 ---
 
-## 🔄 规则自动收集与更新机制（⚠️ 非常重要！）
+## 🔄 规则自动收集与更新机制
 
-### 核心原则：发现通用问题 → 立即更新模板，而非记录问题
+### 核心原则
+发现通用问题 → 立即更新模板，而非记录问题
 
 **错误做法** ❌：
 - 只在"已知问题记录"章节添加问题描述
@@ -740,13 +877,13 @@ return Res.paginated(res, list, total, page, pageSize, moduleConfig.responseForm
 - 不更新生成模板
 
 **正确做法** ✅：
-1. **识别问题是否通用**
-2. **直接修正对应章节的代码模板**
-3. **确保后续生成的模块自动避免该问题**
+1. 识别问题是否通用
+2. 直接修正对应章节的代码模板
+3. 确保后续生成的模块自动避免该问题
 
 ### 自动收集触发条件
 
-当出现以下情况时，AI **必须立即更新本规则文件**：
+当出现以下情况时，AI 必须立即更新本规则文件：
 
 1. **发现代码错误**：
    - 生成的代码有 bug 或运行报错
@@ -773,49 +910,6 @@ return Res.paginated(res, list, total, page, pageSize, moduleConfig.responseForm
 | 通用编码规范 | 添加到"⚠️ 常见错误与修复" | LIMIT 占位符问题 → 添加到常见错误 |
 | 特定模块业务逻辑 | 该模块的 `.prompt.md` | 订单编号生成规则 → 记录在 `order/.prompt.md` |
 
-### 更新操作步骤
-
-**步骤 1：定位问题**
-- 问题是什么？
-- 影响哪些文件？
-- 是否通用？
-
-**步骤 2：更新模板**
-- 找到本文件对应章节
-- 直接修正代码示例
-- 添加 `⚠️` 标注关键注意事项
-
-**步骤 3：验证更新**
-- 确认模板代码正确
-- 确认注释清晰
-- 确认关键点已标注
-
-### 示例：正确的更新流程
-
-**场景**：发现 `init-db.ts` 使用了错误的导入
-
-❌ **错误做法**：
-```markdown
-### 问题 6：init-db.ts 导入错误
-**现象**：运行时报错 Cannot read properties of undefined
-**原因**：导入了不存在的 db 对象
-**解决方案**：改用 execute 和 insert
-**状态**：已修复
-```
-
-✅ **正确做法**：
-1. 找到"8️⃣ init-db.ts"章节
-2. 直接修正模板代码：
-   ```typescript
-   import { execute, insert } from '../../config/database'; // ✅ 正确
-   // import { db } from '../../config/database'; // ❌ 错误，db 不存在
-   ```
-3. 添加关键注意事项：
-   ```markdown
-   **关键注意事项**：
-   - ✅ **必须使用 `execute` 和 `insert` 函数**，不是 `db.query`
-   ```
-
 ### AI 执行检查清单
 
 每次生成模块后，AI 应该问自己：
@@ -826,96 +920,41 @@ return Res.paginated(res, list, total, page, pageSize, moduleConfig.responseForm
 - [ ] 更新的模板代码是否正确、完整？
 - [ ] 关键点是否用 `⚠️` 标注？
 
-### 强制执行规则
-
-**AI 必须遵守**：
-1. 发现通用问题 → 立即更新本文件的代码模板
-2. 更新时机：修复问题后立即更新，不要等到对话结束
-3. 更新方式：直接修正模板代码，不是只记录问题
-4. 更新完整性：确保后续生成的模块自动避免该问题
-
 ---
 
 ## 📚 生成流程
 
 ### 第一步：理解需求
-- 用户提供接口文档/需求文档
+- 用户提供接口文档/需求文档（或只是一句话如"生成订单管理"）
 - 复述理解到的需求（业务背景、接口列表、数据表）
 - 确认响应格式（B2B/ERP/Ebooking）
 
 ### 第二步：生成文件
 按照上述文件结构，依次生成所有文件：
-1. `module.config.ts` - 模块配置（确定模块基本信息）
-2. `types.ts` - 类型定义（定义数据结构）
+1. `module.config.ts` - 模块配置
+2. `types.ts` - 类型定义
 3. `schema.sql` - 数据库表结构
-4. `model.ts` - 数据模型（实现查询逻辑）
-5. `controller.ts` - 控制器（实现业务逻辑）
+4. `model.ts` - 数据模型
+5. `controller.ts` - 控制器
 6. `routes.ts` - 路由配置
-7. `.prompt.md` - 模块级提示词（记录业务逻辑）
-8. `init-db.ts` - 数据库初始化脚本（可选）
+7. `.prompt.md` - 模块级提示词
+8. `init-db.ts` - 数据库初始化脚本
+9. `verify.ts` - 验证脚本
 
-### 第三步：验证兼容性
-- ✅ 确认 `module.config.ts` 中的配置完整
-- ✅ 确认响应格式一致
-- ✅ 确认路由路径与接口列表一致
-- ✅ 提示用户运行 `init-db.ts` 创建数据库表
+### 第三步：初始化数据库
+- ✅ 自动运行 `npx tsx src/generated/[模块名]/init-db.ts`
+- ✅ 观察输出，确保表创建成功且测试数据插入成功
+- ✅ 如果失败，分析错误并修复
 
-### 第四步：测试接口
-- 提示用户访问后台管理页面
-- 检查模块是否出现在"模块管理"
-- 检查接口是否出现在"接口管理"
-- 检查数据表是否出现在"数据管理"
-
----
-
-## 📝 已知问题记录
-
-> **本章节用途**：记录在实际使用中发现的问题及解决方案，防止重复犯错。
-> 
-> **更新时机**：每次发现新问题并解决后，立即记录到此处。
-
-### 问题 1：MySQL LIMIT/OFFSET 参数绑定错误
-**发现时间**：初始开发阶段
-**现象**：`Incorrect arguments to mysqld_stmt_execute`
-**原因**：LIMIT 和 OFFSET 不能使用 `?` 占位符
-**解决方案**：直接拼接到 SQL 中
-**状态**：✅ 已修复（已更新模板）
-
-### 问题 2：空参数数组导致查询失败
-**发现时间**：初始开发阶段
-**现象**：查询返回空结果或报错
-**原因**：`rawQuery` 不接受空数组
-**解决方案**：`params.length > 0 ? params : undefined`
-**状态**：✅ 已修复（已更新模板）
-
-### 问题 3：ID 参数类型错误
-**发现时间**：初始开发阶段
-**现象**：ID 被当作字符串处理
-**原因**：Express 路由参数是字符串
-**解决方案**：使用 `parseInt(req.params.id)`
-**状态**：✅ 已修复（已更新模板）
-
-### 问题 4：响应格式不一致导致后台显示异常
-**发现时间**：初始开发阶段
-**现象**：后台管理页面显示错误或无法正常工作
-**原因**：Controller 中的响应格式与 `module.config.ts` 不一致
-**解决方案**：所有响应必须使用 `moduleConfig.responseFormat`
-**状态**：✅ 已修复（已更新模板）
-
-### 问题 5：缺少 `tableDescriptions` 导致数据管理页面显示不友好
-**发现时间**：数据管理功能开发时
-**现象**：数据管理页面无法显示表的用途说明
-**原因**：`module.config.ts` 中未定义 `tableDescriptions`
-**解决方案**：在 `module.config.ts` 模板中添加 `tableDescriptions` 字段
-**状态**：✅ 已修复（已更新模板）
-
----
-
-> **如何使用本章节**：
-> - 遇到新问题时，按照上述格式添加记录
-> - 包含：发现时间、现象、原因、解决方案、状态
-> - 如果问题已修复并更新到模板，标记为"✅ 已修复"
-> - 如果问题是特定业务逻辑，记录在对应模块的 `.prompt.md`
+### 第四步：自动验证功能可用性
+- ✅ 自动运行 `npx tsx src/generated/[模块名]/verify.ts`
+- ✅ 验证内容：
+  1. 验证 1 个最有代表性的接口（智能选择）
+  2. 验证模块是否被后台管理识别
+- ✅ 如果验证失败，分析错误原因：
+  - 如果是规则问题 → 立即优化规则，重新生成
+  - 如果是环境问题 → 提示用户检查环境
+- ✅ 向用户报告验证结果
 
 ---
 
@@ -924,8 +963,7 @@ return Res.paginated(res, list, total, page, pageSize, moduleConfig.responseForm
 生成完成后，确认以下事项：
 
 - [ ] 所有必需文件都已生成
-- [ ] `module.config.ts` 包含完整配置（name, description, responseFormat, tables, tableDescriptions, interfaces）
-- [ ] `types.ts` 定义了完整的类型（实体、查询、创建、更新）
+- [ ] `module.config.ts` 包含完整配置
 - [ ] `model.ts` 的 `findList` 方法中 LIMIT/OFFSET 直接拼接
 - [ ] `model.ts` 的 `rawQuery` 调用正确处理空参数
 - [ ] `controller.ts` 所有响应使用 `moduleConfig.responseFormat`
