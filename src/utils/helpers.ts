@@ -160,3 +160,18 @@ export function generateId(prefix: string = ''): string {
   return `${prefix}${timestamp}${random}`.toUpperCase();
 }
 
+/**
+ * 解析 ticket-web 格式的分页参数
+ * 支持从 query 或 body 中解析 PageIndex 和 PageSize
+ */
+export function parseTicketWebPagination(query: any, body: any = {}) {
+  // 优先从 body 中获取，如果没有则从 query 中获取
+  const pageIndex = parseInt(body.PageIndex || query.PageIndex || '1', 10) || 1;
+  const pageSize = parseInt(body.PageSize || query.PageSize || '20', 10) || 20;
+  
+  return {
+    pageIndex: Math.max(1, pageIndex),
+    pageSize: Math.max(1, Math.min(100, pageSize)), // 限制最大 100
+  };
+}
+

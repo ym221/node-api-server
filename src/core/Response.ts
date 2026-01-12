@@ -3,11 +3,11 @@ import { Response } from 'express';
 /**
  * 响应格式类型
  */
-export type ResponseFormat = 'ERP' | 'B2B' | 'Ebooking';
+export type ResponseFormat = 'ERP' | 'B2B' | 'Ebooking' | 'ticket-web';
 
 /**
  * 响应封装类
- * 支持三种响应格式：ERP（大写字段）、B2B/Ebooking（小写字段）
+ * 支持四种响应格式：ERP（大写字段）、B2B/Ebooking（小写字段）、ticket-web（工单系统格式）
  */
 export class Res {
   /**
@@ -19,7 +19,7 @@ export class Res {
     format: ResponseFormat = 'B2B',
     message: string = '操作成功'
   ) {
-    const response = this.buildResponse(true, data, message, format);
+    const response = this.buildResponse(true, data, message, format, '');
     return res.status(200).json(response);
   }
 
@@ -31,9 +31,10 @@ export class Res {
     message: string = '操作失败',
     format: ResponseFormat = 'B2B',
     code: number = 400,
-    data: any = null
+    data: any = null,
+    userMsg: string = ''
   ) {
-    const response = this.buildResponse(false, data, message, format);
+    const response = this.buildResponse(false, data, message, format, userMsg);
     return res.status(code).json(response);
   }
 
@@ -68,6 +69,20 @@ export class Res {
         },
       };
       return res.status(200).json(response);
+    } else if (format === 'ticket-web') {
+      // ticket-web 格式：工单系统格式
+      const response = {
+        ErrCode: 0,
+        ErrMsg: '',
+        Data: {
+          List: list,
+          Total: total,
+          PageSize: pageSize,
+          PageIndex: page,
+        },
+        UserMsg: '',
+      };
+      return res.status(200).json(response);
     } else {
       // B2B / Ebooking 格式：使用 pagination，code 为 0 表示成功
       data = {
@@ -92,7 +107,8 @@ export class Res {
     success: boolean,
     data: any,
     message: string,
-    format: ResponseFormat
+    format: ResponseFormat,
+    userMsg: string = ''
   ) {
     if (format === 'ERP') {
       // ERP 格式：大写字段，Code 为 0 表示成功
@@ -101,6 +117,14 @@ export class Res {
         Data: data,
         Message: message,
         Code: success ? 0 : 400,
+      };
+    } else if (format === 'ticket-web') {
+      // ticket-web 格式：工单系统格式
+      return {
+        ErrCode: success ? 0 : 400,
+        ErrMsg: success ? '' : message,
+        Data: data || {},
+        UserMsg: userMsg || (success ? '' : message),
       };
     } else {
       // B2B / Ebooking 格式：小写字段，code 为 0 表示成功
