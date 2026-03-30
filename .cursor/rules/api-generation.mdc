@@ -20,6 +20,7 @@ alwaysApply: false
 
 ### 2. 模块级提示词机制
 - ✅ 每个模块必须包含 `.prompt.md` 文件（位置：`src/generated/[模块名]/.prompt.md`）
+- ✅ 后台管理页面的模块“已配置”状态，直接依赖于该 `.prompt.md` 文件是否存在并被正确识别；缺失时可能显示“待配置”
 - ✅ 记录：业务逻辑、接口说明、特殊处理、已知问题
 - ✅ 模块特殊调整记录在模块级 `.prompt.md`，通用规则更新到本文件
 - ✅ 若存在 `api-doc.md`，`.prompt.md` 需在"相关文档"章节链接到接口文档
@@ -991,6 +992,7 @@ return Res.paginated(res, list, total, page, pageSize, moduleConfig.responseForm
 - [ ] `routes.ts` 路由路径与 `module.config.ts` 一致
 - [ ] `schema.sql` 包含所有必要字段和索引
 - [ ] `.prompt.md` 记录了业务逻辑和接口说明
+- [ ] `.prompt.md` 存在于 `src/generated/[模块名]/.prompt.md`，并确保后台管理识别为已配置
 
 ---
 
